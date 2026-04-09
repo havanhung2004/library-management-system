@@ -1,0 +1,1 @@
+2026-04-09 15:32:29:3229 [31merror[39m: [31mCould not connect to MongoDB E11000 duplicate key error collection: hnue-digital-library.categories index: name_1 dup key: { name: "Giáo dục" }[39m

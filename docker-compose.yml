@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+  api-server:
+    build: ./server
+    ports:
+      - "5001:5001"
+    environment:
+      - PORT=5001
+      - MONGODB_URI=mongodb://mongodb:27017/hnue-digital-library
+      - JWT_SECRET=super-secret-key-123
+      - JWT_EXPIRES_IN=7d
+      - ADMIN_EMAIL=admin@hnue.edu.vn
+      - ADMIN_PASSWORD=Admin@123
+      - LINK_COR=http://localhost:5173
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    depends_on:
+      - mongodb
+
+  web-client:
+    build: ./frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - api-server
+
+volumes:
+  mongodb_data:

@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #4f46e5;
+  --color-primary-light: #818cf8;
+  --color-primary-dark: #3730a3;
+  --color-secondary: #06b6d4;
+  --color-accent: #f43f5e;
+  
+  --color-background: #0f172a;
+  --color-surface: #1e293b;
+  --color-surface-hover: #334155;
+  
+  --font-inter: "Inter", sans-serif;
+  --font-outfit: "Outfit", sans-serif;
+  
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  
+  --animate-float: float 3s ease-in-out infinite;
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+}
+
+@layer base {
+  body {
+    @apply bg-background text-slate-200 font-inter antialiased;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-outfit font-bold text-white;
+  }
+}
+
+@layer components {
+  .premium-card {
+    @apply bg-surface/40 backdrop-blur-md border border-white/10 rounded-xl p-6 transition-all duration-300 hover:bg-surface/60 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/20;
+  }
+  
+  .premium-button {
+    @apply px-6 py-2.5 bg-primary rounded-lg font-semibold text-white transition-all duration-300 hover:bg-primary-light hover:scale-105 active:scale-95 shadow-md shadow-primary/30 disabled:opacity-50 disabled:scale-100;
+  }
+  
+  .glass-nav {
+    @apply sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-white/5;
+  }
+  
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent opacity-90;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-background;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-700 rounded-full hover:bg-slate-600;
+}
