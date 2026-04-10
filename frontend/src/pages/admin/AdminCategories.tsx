@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Search, Edit2, Trash2, Tag, X } from 'lucide-react';
 import api from '../../lib/api';
+import Pagination from '../../components/ui/Pagination';
 
 const AdminCategories: React.FC = () => {
   const [categories, setCategories] = useState<any[]>([]);
@@ -9,6 +10,8 @@ const AdminCategories: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<any>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [meta, setMeta] = useState({ page: 1, totalPages: 1, totalResults: 0 });
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -16,13 +19,32 @@ const AdminCategories: React.FC = () => {
 
   useEffect(() => {
     fetchCategories();
-  }, []);
+  }, [currentPage]);
+
+  // Search with debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (currentPage !== 1) {
+        setCurrentPage(1);
+      } else {
+        fetchCategories();
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const fetchCategories = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/categories');
+      const response = await api.get('/categories', {
+        params: {
+          name: searchQuery || undefined,
+          page: currentPage,
+          limit: 10,
+        }
+      });
       setCategories(response.data.data);
+      setMeta(response.data.meta);
     } catch (err) {
       console.error('Error fetching categories:', err);
     } finally {
@@ -123,14 +145,8 @@ const AdminCategories: React.FC = () => {
                     <td className="px-6 py-4"><div className="h-6 w-20 bg-white/5 ml-auto rounded"></div></td>
                   </tr>
                 ))
-              ) : categories.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center text-slate-500 italic">Chưa có dữ liệu danh mục.</td>
-                </tr>
               ) : (
-                categories.filter(cat =>
-                  cat.name?.toLowerCase().includes(searchQuery.toLowerCase())
-                ).map((cat) => (
+                categories.map((cat) => (
                   <tr key={cat._id} className="hover:bg-white/2 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -168,6 +184,17 @@ const AdminCategories: React.FC = () => {
             </tbody>
           </table>
         </div>
+      </div>
+
+      <div className="flex justify-between items-center bg-surface/30 backdrop-blur-md p-4 rounded-xl border border-white/5">
+        <div className="text-sm text-slate-400">
+          Hiển thị <span className="text-white font-medium">{categories.length}</span> trên <span className="text-white font-medium">{meta.totalResults}</span> danh mục
+        </div>
+        <Pagination 
+          page={currentPage} 
+          totalPages={meta.totalPages} 
+          onPageChange={(p) => setCurrentPage(p)} 
+        />
       </div>
 
       <AnimatePresence>

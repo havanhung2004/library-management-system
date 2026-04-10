@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Book, User, LogOut, Search, Home, Menu, X } from 'lucide-react';
+import { Book, User, LogOut, Search, Home, Menu, X, DollarSign } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -56,6 +56,13 @@ const Navbar: React.FC = () => {
                   {user?.profile?.firstName}
                 </span>
               </Link>
+              <Link
+                to="/fines"
+                className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                title="Phí phạt"
+              >
+                <DollarSign className="w-5 h-5" />
+              </Link>
               <button
                 onClick={handleLogout}
                 className="p-2 text-slate-400 hover:text-accent transition-colors"
@@ -101,6 +108,16 @@ const Navbar: React.FC = () => {
               <Link to="/search" onClick={() => setIsMenuOpen(false)} className="text-slate-300 hover:text-white flex items-center gap-3 transition-colors font-medium text-lg">
                 <Search className="w-5 h-5" /> Tìm kiếm
               </Link>
+              {user && (
+                <>
+                  <Link to="/profile" onClick={() => setIsMenuOpen(false)} className="text-slate-300 hover:text-white flex items-center gap-3 transition-colors font-medium text-lg">
+                    <User className="w-5 h-5" /> Hồ sơ cá nhân
+                  </Link>
+                  <Link to="/fines" onClick={() => setIsMenuOpen(false)} className="text-slate-300 hover:text-white flex items-center gap-3 transition-colors font-medium text-lg">
+                    <DollarSign className="w-5 h-5" /> Phí phạt & Thanh toán
+                  </Link>
+                </>
+              )}
               {(user?.role === 'admin' || user?.role === 'librarian' || user?.role === 'superadmin') && (
                 <Link to="/admin" onClick={() => setIsMenuOpen(false)} className="text-primary flex items-center gap-3 transition-colors font-bold text-lg">
                   <Book className="w-5 h-5" /> Quản trị

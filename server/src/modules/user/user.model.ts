@@ -28,6 +28,8 @@ const userSchema = new Schema<IUser, IUserModel>(
       lastName: { type: String, trim: true },
       studentId: { type: String, trim: true },
       department: { type: String, trim: true },
+      avatar: { type: String, trim: true },
+      avatarPublicId: { type: String, trim: true },
     },
     isEmailVerified: {
       type: Boolean,

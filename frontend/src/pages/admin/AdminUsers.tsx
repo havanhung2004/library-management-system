@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Users, Edit2, Trash2, Shield, User, Mail, X, Check } from 'lucide-react';
 import api from '../../lib/api';
+import Pagination from '../../components/ui/Pagination';
 
 const AdminUsers: React.FC = () => {
   const [users, setUsers] = useState<any[]>([]);
@@ -9,6 +10,8 @@ const AdminUsers: React.FC = () => {
   const [roleFilter, setRoleFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [showEditModal, setShowEditModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [meta, setMeta] = useState({ page: 1, totalPages: 1, totalResults: 0 });
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [editFormData, setEditFormData] = useState({
     role: '',
@@ -22,7 +25,18 @@ const AdminUsers: React.FC = () => {
 
   useEffect(() => {
     fetchUsers();
-  }, [roleFilter]);
+  }, [roleFilter, currentPage]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (currentPage !== 1) {
+        setCurrentPage(1);
+      } else {
+        fetchUsers();
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -30,9 +44,13 @@ const AdminUsers: React.FC = () => {
       const response = await api.get('/users', {
         params: {
           role: roleFilter || undefined,
+          search: searchQuery || undefined,
+          page: currentPage,
+          limit: 10,
         }
       });
       setUsers(response.data.data);
+      setMeta(response.data.meta);
     } catch (err) {
       console.error('Error fetching users:', err);
     } finally {
@@ -158,14 +176,7 @@ const AdminUsers: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                users.filter(user => {
-                  const query = searchQuery.toLowerCase();
-                  const firstName = user.profile?.firstName || '';
-                  const lastName = user.profile?.lastName || '';
-                  const fullName = `${firstName} ${lastName}`.toLowerCase();
-                  const email = (user.email || '').toLowerCase();
-                  return fullName.includes(query) || email.includes(query);
-                }).map((user) => (
+                users.map((user) => (
                   <tr key={user._id} className="hover:bg-white/2 transition-colors group">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -226,6 +237,17 @@ const AdminUsers: React.FC = () => {
             </tbody>
           </table>
         </div>
+      </div>
+
+      <div className="flex justify-between items-center bg-surface/30 backdrop-blur-md p-4 rounded-xl border border-white/5">
+        <div className="text-sm text-slate-400">
+          Hiển thị <span className="text-white font-medium">{users.length}</span> trên <span className="text-white font-medium">{meta.totalResults}</span> người dùng
+        </div>
+        <Pagination 
+          page={currentPage} 
+          totalPages={meta.totalPages} 
+          onPageChange={(p) => setCurrentPage(p)} 
+        />
       </div>
 
       <AnimatePresence>

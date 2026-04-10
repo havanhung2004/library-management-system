@@ -12,7 +12,12 @@ const createCategory = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getCategories = catchAsync(async (req: Request, res: Response) => {
-  const filter = {};
+  const { name } = req.query;
+  const filter: any = {};
+  if (name) {
+    filter.name = { $regex: name, $options: 'i' };
+  }
+  
   const options = {
     sortBy: req.query.sortBy,
     limit: req.query.limit,

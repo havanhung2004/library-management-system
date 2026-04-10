@@ -1,22 +1,44 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, Clock, Search, BookOpen } from 'lucide-react';
 import api from '../../lib/api';
+import Pagination from '../../components/ui/Pagination';
 
 const AdminLoans: React.FC = () => {
   const [loans, setLoans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('Tất cả');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [meta, setMeta] = useState({ page: 1, totalPages: 1, totalResults: 0 });
 
   useEffect(() => {
     fetchLoans();
-  }, []);
+  }, [filterStatus, currentPage]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (currentPage !== 1) {
+        setCurrentPage(1);
+      } else {
+        fetchLoans();
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const fetchLoans = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/loans');
+      const response = await api.get('/loans', {
+        params: {
+          status: filterStatus !== 'Tất cả' ? filterStatus : undefined,
+          search: searchQuery || undefined,
+          page: currentPage,
+          limit: 10,
+        }
+      });
       setLoans(response.data.data);
+      setMeta(response.data.meta);
     } catch (err) {
       console.error('Error fetching loans:', err);
     } finally {
@@ -93,22 +115,7 @@ const AdminLoans: React.FC = () => {
                   </tr>
                 ))
               ) : (
-                loans.filter(loan => {
-                  const firstName = loan.userId?.profile?.firstName || '';
-                  const lastName = loan.userId?.profile?.lastName || '';
-                  const fullName = `${firstName} ${lastName}`.toLowerCase();
-                  const bookTitle = (loan.copyId?.bookId?.title || '').toLowerCase();
-                  const query = searchQuery.toLowerCase();
-                  
-                  const matchesSearch = fullName.includes(query) || bookTitle.includes(query);
-                  
-                  let matchesStatus = true;
-                  if (filterStatus === 'Đang mượn') matchesStatus = loan.status === 'active';
-                  if (filterStatus === 'Quá hạn') matchesStatus = loan.status === 'overdue';
-                  if (filterStatus === 'Đã trả') matchesStatus = loan.status === 'returned';
-                  
-                  return matchesSearch && matchesStatus;
-                }).map((loan) => {
+                loans.map((loan) => {
                   const firstName = loan.userId?.profile?.firstName || 'Mượn bởi';
                   const lastName = loan.userId?.profile?.lastName || 'Người dùng';
                   const bookTitle = loan.copyId?.bookId?.title || 'Đầu sách không xác định';
@@ -165,6 +172,17 @@ const AdminLoans: React.FC = () => {
             </tbody>
           </table>
         </div>
+      </div>
+
+      <div className="flex justify-between items-center bg-surface/30 backdrop-blur-md p-4 rounded-xl border border-white/5">
+        <div className="text-sm text-slate-400">
+          Hiển thị <span className="text-white font-medium">{loans.length}</span> trên <span className="text-white font-medium">{meta.totalResults}</span> bản ghi
+        </div>
+        <Pagination 
+          page={currentPage} 
+          totalPages={meta.totalPages} 
+          onPageChange={(p) => setCurrentPage(p)} 
+        />
       </div>
     </div>
   );

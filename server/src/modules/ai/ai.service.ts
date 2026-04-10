@@ -33,42 +33,31 @@ class AIService {
   private async retrieveRelevantBooks(query: string): Promise<string> {
     try {
       // Simple keyword-based retrieval from MongoDB
+      const stopWords = [
+        "bạn", "mình", "tôi", "của", "và", "các", "có", "không", "gì", "nào", "cho", "với", "về", "được", "trong",
+        "là", "cái", "chiếc", "cuốn", "quyển", "tờ", "mình", "này", "kia", "đó", "đâu", "thế", "nào", "như", "nếu",
+        "thì", "mà", "lại", "cũng", "vẫn", "còn", "đến", "đi", "ra", "vào", "lên", "xuống", "tìm", "sách", "tài liệu"
+      ];
+      
       const keywords = query
         .toLowerCase()
         .replace(/[?!.,]/g, "")
         .split(" ")
-        .filter(
-          (w) =>
-            w.length > 2 &&
-            ![
-              "bạn",
-              "mình",
-              "tôi",
-              "của",
-              "và",
-              "các",
-              "có",
-              "không",
-              "gì",
-              "nào",
-              "cho",
-              "với",
-              "về",
-              "được",
-              "trong",
-            ].includes(w),
-        );
+        .filter(w => w.length > 1 && !stopWords.includes(w));
 
       if (keywords.length === 0) return "";
 
       const regexes = keywords.map((k) => new RegExp(k, "i"));
-      const orConditions = regexes.map((r) => ({
-        $or: [{ title: r }, { author: r }, { description: r }],
-      }));
+      const orConditions = keywords.length > 0 ? [
+        { title: { $in: regexes } },
+        { author: { $in: regexes } },
+        { description: { $in: regexes } }
+      ] : [];
 
-      const books = await Book.find({ $or: orConditions })
+      // If no valid keywords after filter, try an unconventional match or return empty
+      const books = await Book.find(keywords.length > 0 ? { $or: orConditions } : {})
         .populate("category", "name")
-        .limit(5)
+        .limit(8)
         .lean();
 
       if (books.length === 0) return "";
@@ -88,11 +77,11 @@ class AIService {
       const bookContext = booksWithAvailability
         .map(
           (b: any) =>
-            `- **${b.title}** (Tác giả: ${b.author}, Mã ISBN: ${b.isbn}, Danh mục: ${b.category?.name || "N/A"}, Bản sao còn trống: ${b.availableCopies}/${b.totalCopies})${b.description ? ` — ${b.description.slice(0, 100)}...` : ""}`,
+            `- **${b.title}**\n  * Tác giả: ${b.author}\n  * ISBN: ${b.isbn}\n  * Danh mục: ${b.category?.name || "N/A"}\n  * Trạng thái: ${b.availableCopies > 0 ? `Còn ${b.availableCopies}/${b.totalCopies} cuốn` : "Hết sách vật lý (đã cho mượn hết)"}${b.documentUrl ? " [Có bản PDF/Ebook]" : ""}\n  * Mô tả: ${b.description ? b.description.slice(0, 150) + "..." : "Không có mô tả."}`,
         )
-        .join("\n");
+        .join("\n\n");
 
-      return `\n\n**Kết quả tìm kiếm trong kho sách HNUE liên quan đến câu hỏi của bạn:**\n${bookContext}\n`;
+      return `\n\n### DANH SÁCH SÁCH TRONG THƯ VIỆN LIÊN QUAN:\n${bookContext}\n`;
     } catch (error) {
       console.error("RAG retrieval error:", error);
       return "";

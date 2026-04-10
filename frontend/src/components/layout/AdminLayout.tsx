@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, BookPlus, ClipboardList, Users, Settings, LogOut, ChevronRight, Tag, FileText } from 'lucide-react';
+import { LayoutDashboard, BookPlus, ClipboardList, Users, Settings, LogOut, ChevronRight, Tag, FileText, DollarSign, BarChart } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 const menuItems = [
@@ -9,7 +9,9 @@ const menuItems = [
   { path: '/admin/categories', label: 'Quản lý danh mục', icon: Tag },
   { path: '/admin/documents', label: 'Quản lý tài liệu', icon: FileText },
   { path: '/admin/loans', label: 'Quản lý mượn/trả', icon: ClipboardList },
+  { path: '/admin/fines', label: 'Quản lý phí phạt', icon: DollarSign },
   { path: '/admin/users', label: 'Người dùng', icon: Users },
+  { path: '/admin/reports', label: 'Thống kê & Báo cáo', icon: BarChart },
   { path: '/admin/settings', label: 'Cấu hình', icon: Settings },
 ];
 

@@ -1,9 +1,11 @@
 import Loan from './loan.model';
 import Copy from '../book/copy.model';
+import Book from '../book/book.model';
 import User from '../user/user.model';
 import notificationService from '../notification/notification.service';
 import { ApiError } from '../../common/utils/ApiError';
 import { Types } from 'mongoose';
+import fineService from '../fine/fine.service';
 
 const borrowBook = async (
   userId: Types.ObjectId,
@@ -60,6 +62,32 @@ const returnBook = async (loanId: string) => {
   loan.returnDate = new Date();
   await loan.save();
 
+  // Check for overdue and create fine
+  const dueDate = new Date(loan.dueDate);
+  const returnDate = new Date(loan.returnDate);
+  
+  if (returnDate > dueDate) {
+    const diffTime = Math.abs(returnDate.getTime() - dueDate.getTime());
+    const overdueDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const amount = overdueDays * 5000; // 5k per day
+
+    await fineService.createFine({
+      userId: loan.userId,
+      loanId: loan._id as Types.ObjectId,
+      amount,
+      overdueDays,
+      reason: `Trả sách chậm ${overdueDays} ngày`,
+      status: 'pending',
+    });
+
+    // Create notification for user
+    await notificationService.createNotification(
+      loan.userId.toString(),
+      `Bạn đã trả sách chậm ${overdueDays} ngày. Phí phạt là ${amount.toLocaleString('vi-VN')} VNĐ.`,
+      'FINE_CREATED'
+    );
+  }
+
   const copy = await Copy.findById(loan.copyId);
   if (copy) {
     copy.status = 'available';
@@ -72,8 +100,76 @@ const returnBook = async (loanId: string) => {
 const getLoansByUser = async (userId: Types.ObjectId) => {
   return Loan.find({ userId }).populate({
     path: 'copyId',
-    populate: { path: 'bookId', select: 'title author' },
+    populate: { path: 'bookId', select: 'title author coverImage' },
   });
+};
+
+const queryLoans = async (filter: any, options: any) => {
+  const { limit = 10, page = 1, sortBy = 'createdAt:desc', search } = options;
+  const skip = (page - 1) * limit;
+
+  let finalFilter = { ...filter };
+
+  if (search) {
+    const regex = { $regex: search, $options: 'i' };
+    
+    // 1. Find users matching search
+    const users = await User.find({
+      $or: [
+        { 'profile.firstName': regex },
+        { 'profile.lastName': regex },
+        { email: regex }
+      ]
+    }).select('_id');
+    const userIds = users.map(u => u._id);
+
+    // 2. Find books matching search
+    const books = await Book.find({
+      $or: [
+        { title: regex },
+        { author: regex }
+      ]
+    }).select('_id');
+    const bookIds = books.map(b => b._id);
+
+    // 3. Find copies belonging to those books
+    const copies = await Copy.find({ bookId: { $in: bookIds } }).select('_id');
+    const copyIds = copies.map(c => c._id);
+
+    // 4. Update filter
+    finalFilter = {
+      ...filter,
+      $or: [
+        { userId: { $in: userIds } },
+        { copyId: { $in: copyIds } }
+      ]
+    };
+  }
+
+  const [sortField, sortOrder] = sortBy.split(':');
+  const sort: any = {};
+  sort[sortField] = sortOrder === 'desc' ? -1 : 1;
+
+  const loans = await Loan.find(finalFilter)
+    .sort(sort)
+    .skip(skip)
+    .limit(limit)
+    .populate('userId', 'profile.firstName profile.lastName email')
+    .populate({
+      path: 'copyId',
+      populate: { path: 'bookId', select: 'title author coverImage' },
+    });
+
+  const totalResults = await Loan.countDocuments(finalFilter);
+  const totalPages = Math.ceil(totalResults / limit);
+
+  return {
+    results: loans,
+    page,
+    limit,
+    totalPages,
+    totalResults,
+  };
 };
 
 const getAllLoans = async () => {
@@ -91,4 +187,5 @@ export default {
   returnBook,
   getLoansByUser,
   getAllLoans,
+  queryLoans,
 };

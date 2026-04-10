@@ -18,7 +18,11 @@ const AdminDocuments: React.FC = () => {
       const response = await api.get('/documents', {
         params: { next_cursor: nextCursor }
       });
-      setDocuments(response.data.data);
+      if (nextCursor) {
+        setDocuments(prev => [...prev, ...response.data.data]);
+      } else {
+        setDocuments(response.data.data);
+      }
       setMeta(response.data.meta);
     } catch (err) {
       console.error('Error fetching documents from Cloudinary:', err);
@@ -162,6 +166,19 @@ const AdminDocuments: React.FC = () => {
             </tbody>
           </table>
         </div>
+        
+        {meta.nextCursor && (
+          <div className="p-6 border-t border-white/5 flex justify-center">
+            <button
+              onClick={() => fetchDocuments(meta.nextCursor)}
+              disabled={loading}
+              className="px-6 py-2 bg-white/5 hover:bg-white/10 text-slate-300 text-sm font-bold rounded-lg transition-all flex items-center gap-2 disabled:opacity-50"
+            >
+              {loading ? <RefreshCcw className="w-4 h-4 animate-spin" /> : null}
+              Tải thêm tài liệu
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

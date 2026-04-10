@@ -1,16 +1,40 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, BookOpen, Clock, Star, TrendingUp, Sparkles } from 'lucide-react';
-import { Link } from 'react-router-dom';
-
-const featuredBooks = [
-  { id: '1', title: 'Giáo trình Tâm lý học Sư phạm', author: 'Nhiều tác giả', category: 'Giáo dục', image: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=300' },
-  { id: '2', title: 'Đại số Tuyến tính', author: 'Trần Văn B', category: 'Toán học', image: 'https://images.unsplash.com/photo-1589998059171-988d887df646?auto=format&fit=crop&q=80&w=300' },
-  { id: '3', title: 'Lịch sử Việt Nam hiện đại', author: 'Lê Văn C', category: 'Lịch sử', image: 'https://images.unsplash.com/photo-1532012197267-da84d127e765?auto=format&fit=crop&q=80&w=300' },
-  { id: '4', title: 'Trí tuệ Nhân tạo cơ bản', author: 'Phạm Thị D', category: 'CNTT', image: 'https://images.unsplash.com/photo-1541963463532-d68292c34b19?auto=format&fit=crop&q=80&w=300' },
-];
+import { Search, BookOpen, Clock, Star, TrendingUp, Sparkles, ArrowRight, User } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import api from '../lib/api';
 
 const Home: React.FC = () => {
+  const [books, setBooks] = useState<any[]>([]);
+  const [stats, setStats] = useState<any>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [booksRes, statsRes] = await Promise.all([
+          api.get('/books', { params: { limit: 4, sortBy: 'createdAt:desc' } }),
+          api.get('/dashboard/public-stats')
+        ]);
+        setBooks(booksRes.data.data);
+        setStats(statsRes.data.data);
+      } catch (error) {
+        console.error('Error fetching home data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
   return (
     <div className="pb-20">
       {/* Hero Section */}
@@ -39,30 +63,31 @@ const Home: React.FC = () => {
               Tích hợp AI hỗ trợ tra cứu và đề xuất tài liệu cá nhân hóa cho từng sinh viên.
             </p>
 
-            <div className="max-w-2xl mx-auto relative group">
+            <form onSubmit={handleSearch} className="max-w-2xl mx-auto relative group">
               <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none text-slate-500 group-focus-within:text-primary transition-colors">
                 <Search className="w-6 h-6" />
               </div>
               <input
                 type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Tìm kiếm sách, tài liệu, tác giả..."
                 className="w-full bg-surface/50 backdrop-blur-xl border border-white/10 rounded-2xl py-4 md:py-5 pl-14 pr-32 text-sm md:text-base text-white focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all shadow-2xl"
               />
-              <button className="absolute right-2 top-2 bottom-2 premium-button px-4 md:px-8 text-xs md:text-sm">
+              <button type="submit" className="absolute right-2 top-2 bottom-2 premium-button px-4 md:px-8 text-xs md:text-sm">
                 Tìm kiếm
               </button>
-            </div>
+            </form>
           </motion.div>
         </div>
       </section>
 
-      {/* Stats Section */}
       <section className="container mx-auto px-6 mb-32">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: 'Tài liệu số', value: '50,000+', icon: BookOpen },
-            { label: 'Sinh viên', value: '15,000+', icon: User },
-            { label: 'Lượt mượn', value: '120,000+', icon: TrendingUp },
+            { label: 'Tài liệu số', value: (stats?.totalBooks || 50000).toLocaleString() + '+', icon: BookOpen },
+            { label: 'Sinh viên', value: (stats?.totalStudents || 15000).toLocaleString() + '+', icon: User },
+            { label: 'Lượt mượn', value: (stats?.totalLoans || 120000).toLocaleString() + '+', icon: TrendingUp },
             { label: 'Truy cập 24/7', value: 'Online', icon: Clock },
           ].map((stat, i) => (
             <motion.div
@@ -83,12 +108,11 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* Featured Books Section */}
       <section className="container mx-auto px-6 mb-32">
         <div className="flex justify-between items-end mb-12">
           <div>
-            <h2 className="text-4xl font-bold mb-4 tracking-tight">Tài liệu Nổi bật</h2>
-            <p className="text-slate-400">Những giáo trình và tài liệu được mượn nhiều nhất tuần qua</p>
+            <h2 className="text-4xl font-bold mb-4 tracking-tight">Tài liệu Mới nhất</h2>
+            <p className="text-slate-400">Những giáo trình và tài liệu vừa được cập nhật vào thư viện</p>
           </div>
           <Link to="/search" className="text-primary hover:text-primary-light font-semibold flex items-center gap-2 transition-colors">
             Xem tất cả <ArrowRight className="w-4 h-4" />
@@ -96,36 +120,47 @@ const Home: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {featuredBooks.map((book, i) => (
-            <motion.div
-              key={book.id}
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              className="group cursor-pointer"
-            >
-              <div className="relative aspect-[3/4] rounded-2xl overflow-hidden mb-6 shadow-xl shadow-black/40">
-                <img 
-                  src={book.image} 
-                  alt={book.title} 
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity"></div>
-                <div className="absolute top-4 left-4">
-                  <span className="bg-primary/90 text-white text-xs font-bold px-3 py-1 rounded-full backdrop-blur-sm">
-                    {book.category}
-                  </span>
+          {loading ? (
+             [1, 2, 3, 4].map((i) => (
+                <div key={i} className="animate-pulse">
+                   <div className="aspect-[3/4] bg-slate-800 rounded-2xl mb-6"></div>
+                   <div className="h-6 bg-slate-800 rounded-lg w-3/4 mb-2"></div>
+                   <div className="h-4 bg-slate-800 rounded-lg w-1/2"></div>
                 </div>
-              </div>
-              <h3 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors line-clamp-1">{book.title}</h3>
-              <p className="text-slate-500 text-sm mb-4">{book.author}</p>
-              <div className="flex items-center gap-4 text-slate-400 text-xs">
-                <span className="flex items-center gap-1"><BookOpen className="w-3 h-3" /> 24 bản</span>
-                <span className="flex items-center gap-1"><Star className="w-3 h-3 text-yellow-500 fill-yellow-500" /> 4.8</span>
-              </div>
-            </motion.div>
-          ))}
+             ))
+          ) : (
+            books.map((book, i) => (
+              <motion.div
+                key={book._id}
+                initial={{ opacity: 0, scale: 0.95 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="group cursor-pointer"
+                onClick={() => navigate(`/books/${book._id}`)}
+              >
+                <div className="relative aspect-[3/4] rounded-2xl overflow-hidden mb-6 shadow-xl shadow-black/40">
+                  <img 
+                    src={book.coverImage || 'https://images.unsplash.com/photo-1543003968-240974628864?auto=format&fit=crop&q=80&w=300'} 
+                    alt={book.title} 
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity"></div>
+                  <div className="absolute top-4 left-4">
+                    <span className="bg-primary/90 text-white text-xs font-bold px-3 py-1 rounded-full backdrop-blur-sm">
+                      {book.category?.name || 'Chung'}
+                    </span>
+                  </div>
+                </div>
+                <h3 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors line-clamp-1">{book.title}</h3>
+                <p className="text-slate-500 text-sm mb-4">{book.author}</p>
+                <div className="flex items-center gap-4 text-slate-400 text-xs">
+                  <span className="flex items-center gap-1"><BookOpen className="w-3 h-3" /> {book.availableCopies} bản</span>
+                  <span className="flex items-center gap-1"><Star className="w-3 h-3 text-yellow-500 fill-yellow-500" /> 4.8</span>
+                </div>
+              </motion.div>
+            ))
+          )}
         </div>
       </section>
 
@@ -153,19 +188,5 @@ const Home: React.FC = () => {
     </div>
   );
 };
-
-const ArrowRight = ({ className }: { className?: string }) => (
-  <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M5 12h14"></path>
-    <path d="m12 5 7 7-7 7"></path>
-  </svg>
-);
-
-const User = ({ className }: { className?: string }) => (
-  <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
-    <circle cx="12" cy="7" r="4"></circle>
-  </svg>
-);
 
 export default Home;

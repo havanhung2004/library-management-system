@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Search, Edit2, Trash2, BookOpen, X, Upload, CheckCircle, Boxes } from 'lucide-react';
 import api from '../../lib/api';
 import AdminCopiesModal from './AdminCopiesModal';
+import Pagination from '../../components/ui/Pagination';
 
 const AdminBooks: React.FC = () => {
   const [books, setBooks] = useState<any[]>([]);
@@ -12,6 +13,8 @@ const AdminBooks: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showCopiesModal, setShowCopiesModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [meta, setMeta] = useState({ page: 1, totalPages: 1, totalResults: 0 });
   const [editingBook, setEditingBook] = useState<any>(null);
   const [selectedBookForCopies, setSelectedBookForCopies] = useState<any>(null);
   const [targetBookId, setTargetBookId] = useState<string | null>(null);
@@ -33,16 +36,35 @@ const AdminBooks: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [currentPage]);
+
+  // Handle search with debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (currentPage !== 1) {
+        setCurrentPage(1);
+      } else {
+        fetchData();
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const fetchData = async () => {
     setLoading(true);
     try {
       const [booksRes, catsRes] = await Promise.all([
-        api.get('/books'),
+        api.get('/books', {
+          params: {
+            page: currentPage,
+            limit: 10,
+            title: searchQuery || undefined,
+          }
+        }),
         api.get('/categories')
       ]);
       setBooks(booksRes.data.data);
+      setMeta(booksRes.data.meta);
       setCategories(catsRes.data.data);
     } catch (err) {
       console.error('Error fetching data:', err);
@@ -221,14 +243,10 @@ const AdminBooks: React.FC = () => {
                 ))
               ) : books.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-500 italic">Chưa có dữ liệu sách.</td>
+                  <td colSpan={5} className="px-6 py-12 text-center text-slate-500 italic">Không tìm thấy sách phù hợp.</td>
                 </tr>
               ) : (
-                books.filter(book => 
-                  book.title?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                  book.author?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                  book.isbn?.toLowerCase().includes(searchQuery.toLowerCase())
-                ).map((book) => (
+                books.map((book) => (
                   <tr key={book._id} className="hover:bg-white/2 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -301,6 +319,17 @@ const AdminBooks: React.FC = () => {
             </tbody>
           </table>
         </div>
+      </div>
+
+      <div className="flex justify-between items-center bg-surface/30 backdrop-blur-md p-4 rounded-xl border border-white/5">
+        <div className="text-sm text-slate-400">
+          Hiển thị <span className="text-white font-medium">{books.length}</span> trên <span className="text-white font-medium">{meta.totalResults}</span> cuốn sách
+        </div>
+        <Pagination 
+          page={currentPage} 
+          totalPages={meta.totalPages} 
+          onPageChange={(p) => setCurrentPage(p)} 
+        />
       </div>
 
       {/* Book Form Modal */}

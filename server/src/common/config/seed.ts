@@ -2,6 +2,8 @@ import User from '../../modules/user/user.model';
 import Category from '../../modules/book/category.model';
 import Book from '../../modules/book/book.model';
 import Copy from '../../modules/book/copy.model';
+import Loan from '../../modules/loan/loan.model';
+import Fine from '../../modules/fine/fine.model';
 import { logger } from '../utils/logger';
 
 export const seedAdmin = async () => {
@@ -276,4 +278,135 @@ export const seedAdmin = async () => {
       logger.info('Books seeded');
     }
   }
+
+  // 4. Seed Fines for testing
+  await seedFines();
+};
+
+const seedFines = async () => {
+  const admin = await User.findOne({ role: 'superadmin' });
+  if (!admin) return;
+
+  // Seed for Admin
+  await seedUserFines(admin, 'Admin');
+
+  // Seed for Phạm Văn Điệp
+  let diep = await User.findOne({ email: 'diep.pv@hnue.edu.vn' });
+  if (!diep) {
+    diep = await User.create({
+      email: 'diep.pv@hnue.edu.vn',
+      password: 'User@123',
+      role: 'student',
+      profile: {
+        firstName: 'Điệp',
+        lastName: 'Phạm Văn',
+        studentId: '705101001',
+        department: 'Khoa Công nghệ thông tin',
+      },
+      isEmailVerified: true,
+    });
+    logger.info('User Phạm Văn Điệp created');
+  }
+  await seedUserFines(diep, 'Phạm Văn Điệp');
+  await seedLoansForTrends();
+
+  logger.info('Library test data seeded successfully');
+};
+
+const seedLoansForTrends = async () => {
+  const existingLoansCount = await Loan.countDocuments();
+  if (existingLoansCount > 10) return; // Only seed if empty-ish
+
+  const admin = await User.findOne({ role: 'superadmin' });
+  const books = await Book.find().limit(10);
+  if (!admin || books.length === 0) return;
+
+  const now = new Date();
+  const months = 6;
+  const loansPerMonth = 8;
+
+  logger.info('Seeding historical loans for trends...');
+
+  for (let m = 0; m < months; m++) {
+    const monthDate = new Date(now);
+    monthDate.setMonth(now.getMonth() - m);
+
+    for (let l = 0; l < loansPerMonth; l++) {
+      const bookIndex = Math.floor(Math.random() * books.length);
+      const copies = await Copy.find({ bookId: books[bookIndex]._id });
+      if (copies.length === 0) continue;
+
+      const loanDate = new Date(monthDate);
+      loanDate.setDate(Math.floor(Math.random() * 28) + 1);
+
+      await Loan.create({
+        userId: admin._id,
+        copyId: copies[0]._id,
+        borrowDate: loanDate,
+        dueDate: new Date(loanDate.getTime() + 14 * 24 * 60 * 60 * 1000),
+        status: 'returned',
+        createdAt: loanDate, // Override for grouping
+      });
+    }
+  }
+  logger.info('Historical loans seeded successfully');
+};
+
+const seedUserFines = async (user: any, label: string) => {
+  const existingFines = await Fine.countDocuments({ userId: user._id });
+  if (existingFines > 0) {
+    logger.info(`Fines for ${label} already seeded, skipping...`);
+    return;
+  }
+
+  // Find some copies
+  const copies = await Copy.find({ status: 'available' }).limit(3);
+  if (copies.length < 3) return;
+
+  const now = new Date();
+  
+  // 1. Overdue returned
+  const dueDate1 = new Date(now);
+  dueDate1.setDate(now.getDate() - 15);
+  const returnDate1 = new Date(now);
+  returnDate1.setDate(now.getDate() - 5);
+
+  const loan1 = await Loan.create({
+    userId: user._id,
+    copyId: copies[0]._id,
+    borrowDate: new Date(now.getTime() - 25 * 24 * 60 * 60 * 1000),
+    dueDate: dueDate1,
+    returnDate: returnDate1,
+    status: 'returned',
+  });
+
+  await Fine.create({
+    userId: user._id,
+    loanId: loan1._id,
+    amount: 10 * 5000,
+    overdueDays: 10,
+    reason: `Phạt trễ hạn 10 ngày (${label})`,
+    status: 'pending',
+  });
+
+  // 2. Currently Overdue
+  const dueDate2 = new Date(now);
+  dueDate2.setDate(now.getDate() - 7);
+
+  const loan2 = await Loan.create({
+    userId: user._id,
+    copyId: copies[1]._id,
+    borrowDate: new Date(now.getTime() - 20 * 24 * 60 * 60 * 1000),
+    dueDate: dueDate2,
+    status: 'overdue',
+  });
+
+  await Fine.create({
+    userId: user._id,
+    loanId: loan2._id,
+    amount: 7 * 5000,
+    overdueDays: 7,
+    reason: `Quá hạn hiện tại 7 ngày (${label})`,
+    status: 'pending',
+  });
 };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search as SearchIcon, Filter, SlidersHorizontal, BookOpen, ChevronRight, Sparkles } from 'lucide-react';
+import { Search as SearchIcon, Filter, BookOpen, ChevronRight, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useSearchParams } from 'react-router-dom';
 import api from '../lib/api';
@@ -7,22 +7,21 @@ import Pagination from '../components/ui/Pagination';
 
 const LIMIT = 9;
 
-const CATEGORIES = ['Tất cả', 'Giáo dục', 'Toán học', 'Lịch sử', 'CNTT', 'Văn học', 'Khoa học tự nhiên', 'Ngoại ngữ', 'Triết học'];
-
 const Search: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [books, setBooks] = useState<any[]>([]);
   const [categories, setCategories] = useState<{ _id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [meta, setMeta] = useState({ page: 1, totalPages: 1, totalResults: 0 });
+  // Derive state from URL params
+  const query = searchParams.get('q') || searchParams.get('title') || '';
+  const categoryId = searchParams.get('category') || '';
+  const page = Number(searchParams.get('page') || '1');
+
   const [aiInsight, setAiInsight] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-
-  // Derive state from URL params
-  const query = searchParams.get('q') || '';
-  const category = searchParams.get('category') || '';
-  const page = Number(searchParams.get('page') || '1');
+  const [inputValue, setInputValue] = useState(query);
 
   const updateParams = (updates: Record<string, string>) => {
     const next = new URLSearchParams(searchParams);
@@ -33,13 +32,28 @@ const Search: React.FC = () => {
     setSearchParams(next);
   };
 
+  // Sync internal input value with URL param (e.g. from homepage or back/forward buttons)
+  useEffect(() => {
+    setInputValue(query);
+  }, [query]);
+
+  // Handle debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (inputValue !== query) {
+        updateParams({ q: inputValue, page: '1' });
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [inputValue, query]);
+
   const fetchBooks = useCallback(async () => {
     setLoading(true);
     try {
       const res = await api.get('/books', {
         params: {
-          title: query || undefined,
-          category: category || undefined,
+          q: query || undefined,
+          category: categoryId || undefined,
           page,
           limit: LIMIT,
         },
@@ -51,7 +65,7 @@ const Search: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [query, category, page]);
+  }, [query, categoryId, page]);
 
   useEffect(() => {
     fetchBooks();
@@ -77,8 +91,8 @@ const Search: React.FC = () => {
     updateParams({ q: query, page: '1' });
   };
 
-  const handleCategoryChange = (cat: string) => {
-    updateParams({ category: cat === 'Tất cả' ? '' : cat, page: '1' });
+  const handleCategoryChange = (catId: string) => {
+    updateParams({ category: catId, page: '1' });
     if (window.innerWidth < 768) setShowFilters(false);
   };
 
@@ -110,10 +124,10 @@ const Search: React.FC = () => {
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-1 gap-1.5">
               {allCats.map((cat) => (
                 <button
-                  key={cat._id}
-                  onClick={() => handleCategoryChange(cat.name)}
+                  key={cat._id || 'all'}
+                  onClick={() => handleCategoryChange(cat._id)}
                   className={`w-full text-left px-4 py-2 rounded-lg text-sm transition-all ${
-                    (cat.name === 'Tất cả' && !category) || cat._id === category || cat.name === category
+                    cat._id === categoryId
                       ? 'bg-primary/20 text-primary border border-primary/30'
                       : 'text-slate-400 hover:bg-white/5 border border-transparent'
                   }`}
@@ -153,8 +167,8 @@ const Search: React.FC = () => {
             </div>
             <input
               type="text"
-              value={query}
-              onChange={(e) => updateParams({ q: e.target.value, page: '1' })}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
               placeholder="Tiêu đề, tác giả, ISBN..."
               className="w-full bg-surface/30 backdrop-blur-md border border-white/5 rounded-xl py-4 pl-12 pr-32 text-white focus:outline-none focus:border-primary/50 transition-all"
             />

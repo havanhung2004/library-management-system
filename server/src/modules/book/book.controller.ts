@@ -15,11 +15,24 @@ const createBook = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getBooks = catchAsync(async (req: Request, res: Response) => {
-  const { title, author, category, limit = 9, page = 1, sortBy } = req.query;
+  const { title, author, category, q, limit = 9, page = 1, sortBy } = req.query;
   const filter: any = {};
-  if (title) filter.title = { $regex: title, $options: 'i' };
-  if (author) filter.author = { $regex: author, $options: 'i' };
-  if (category) filter.category = category;
+  
+  if (q) {
+    const regex = { $regex: q, $options: 'i' };
+    filter.$or = [
+      { title: regex },
+      { author: regex },
+      { isbn: regex }
+    ];
+  } else {
+    if (title) filter.title = { $regex: title, $options: 'i' };
+    if (author) filter.author = { $regex: author, $options: 'i' };
+  }
+  
+  if (category) {
+    filter.category = category;
+  }
 
   const options = {
     sortBy: sortBy || 'createdAt:desc',

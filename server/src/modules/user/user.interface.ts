@@ -9,6 +9,8 @@ export interface IUser {
     lastName: string;
     studentId?: string;
     department?: string;
+    avatar?: string;
+    avatarPublicId?: string;
   };
   isEmailVerified: boolean;
   createdAt: Date;
