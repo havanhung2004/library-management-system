@@ -62,11 +62,15 @@ const NotificationBell: React.FC = () => {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2.5 rounded-xl bg-white/5 hover:bg-white/10 transition-all group border border-white/5"
+        className={`relative p-2.5 rounded-xl transition-all group border ${
+          isOpen
+            ? "bg-primary/10 border-primary/30 text-primary"
+            : "bg-on-surface/5 border-on-surface/5 text-on-surface/60 hover:border-on-surface/10 hover:bg-on-surface/10"
+        }`}
       >
-        <Bell className="w-5 h-5 text-slate-400 group-hover:text-primary transition-colors" />
+        <Bell className="w-5 h-5 transition-colors" />
         {unreadCount > 0 && (
-          <span className="absolute top-2 right-2 w-4 h-4 bg-primary text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-background animate-pulse">
+          <span className="absolute top-2 right-2 w-4 h-4 bg-primary text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-surface animate-pulse">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
@@ -78,12 +82,12 @@ const NotificationBell: React.FC = () => {
             initial={{ opacity: 0, y: 10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            className="absolute right-0 mt-4 w-96 premium-card p-0 overflow-hidden shadow-2xl z-50 border-white/10 bg-slate-900/95 backdrop-blur-2xl"
+            className="absolute right-0 mt-4 w-96 premium-card p-0 overflow-hidden shadow-2xl z-50 bg-surface/95 border-on-surface/10 backdrop-blur-2xl"
           >
-            <div className="p-4 border-b border-white/5 flex justify-between items-center bg-white/2">
+            <div className="p-4 border-b border-on-surface/5 flex justify-between items-center bg-on-surface/2">
               <div>
-                <h3 className="font-bold text-white">Thông báo</h3>
-                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-black mt-0.5">
+                <h3 className="font-bold text-on-background">Thông báo</h3>
+                <p className="text-[10px] text-on-surface/50 uppercase tracking-widest font-black mt-0.5">
                   Bạn có {unreadCount} tin nhắn mới
                 </p>
               </div>
@@ -97,18 +101,20 @@ const NotificationBell: React.FC = () => {
               )}
             </div>
 
-            <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
+            <div className="max-h-[400px] overflow-y-auto">
               {notifications.length === 0 ? (
-                <div className="p-10 text-center text-slate-500 flex flex-col items-center gap-2">
+                <div className="p-10 text-center text-on-surface/30 flex flex-col items-center gap-2">
                   <Bell className="w-8 h-8 opacity-10" />
-                  <p className="text-sm italic">Không có thông báo nào.</p>
+                  <p className="text-sm italic font-medium">
+                    Không có thông báo nào.
+                  </p>
                 </div>
               ) : (
                 notifications.map((n) => (
                   <div
                     key={n._id}
                     onClick={() => !n.isRead && markAsRead(n._id)}
-                    className={`p-4 border-b border-white/5 flex gap-4 hover:bg-white/5 transition-colors cursor-pointer relative ${!n.isRead ? "bg-primary/5" : ""}`}
+                    className={`p-4 border-b border-on-surface/5 flex gap-4 hover:bg-on-surface/5 transition-colors cursor-pointer relative ${!n.isRead ? "bg-primary/5" : ""}`}
                   >
                     <div
                       className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center ${
@@ -121,11 +127,11 @@ const NotificationBell: React.FC = () => {
                     </div>
                     <div className="flex-1">
                       <p
-                        className={`text-sm leading-snug mb-1 ${!n.isRead ? "text-white font-bold" : "text-slate-400"}`}
+                        className={`text-sm leading-snug mb-1 ${!n.isRead ? "text-on-background font-bold" : "text-on-surface/60"}`}
                       >
                         {n.message}
                       </p>
-                      <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                      <div className="flex items-center gap-2 text-[10px] text-on-surface/40">
                         <Clock className="w-3 h-3" />
                         {formatDistanceToNow(new Date(n.createdAt), {
                           addSuffix: true,
@@ -141,11 +147,13 @@ const NotificationBell: React.FC = () => {
               )}
             </div>
 
-            <div className="p-3 bg-white/2 border-t border-white/5 text-center">
-              <button className="text-[10px] font-bold text-slate-500 hover:text-white transition-colors uppercase tracking-widest">
-                Xem tất cả thông báo
-              </button>
-            </div>
+            {notifications.length > 0 && (
+              <div className="p-3 bg-on-surface/2 border-t border-on-surface/5 text-center">
+                <button className="text-[10px] font-bold text-on-surface/40 hover:text-primary transition-colors uppercase tracking-widest">
+                  Xem tất cả thông báo
+                </button>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

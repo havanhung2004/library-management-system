@@ -1,4 +1,4 @@
-import { Document, Model, Types } from 'mongoose';
+import { Document, Model, Types } from "mongoose";
 
 export interface ILoan {
   userId: Types.ObjectId;
@@ -6,9 +6,16 @@ export interface ILoan {
   borrowDate: Date;
   dueDate: Date;
   returnDate?: Date;
-  status: 'active' | 'returned' | 'overdue' | 'renewed';
+  status:
+    | "pending"
+    | "active"
+    | "rejected"
+    | "returned"
+    | "overdue"
+    | "renewed";
 }
 
 export interface ILoanDoc extends ILoan, Document {}
 
 export interface ILoanModel extends Model<ILoanDoc> {}
+

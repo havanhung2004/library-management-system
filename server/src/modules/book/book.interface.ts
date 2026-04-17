@@ -1,4 +1,4 @@
-import { Document, Model, Types } from 'mongoose';
+import { Document, Model, Types } from "mongoose";
 
 export interface IBook {
   title: string;
@@ -27,7 +27,7 @@ export interface ICategoryDoc extends ICategory, Document {}
 
 export interface ICopy {
   bookId: Types.ObjectId;
-  status: 'available' | 'borrowed' | 'lost' | 'damaged';
+  status: "available" | "borrowed" | "reserved" | "lost" | "damaged";
   barcode: string;
   location?: string;
 }
@@ -36,10 +36,11 @@ export interface ICopyDoc extends ICopy, Document {}
 
 export interface IDocument {
   fileUrl: string;
-  fileType: 'pdf' | 'epub' | 'mobi';
+  fileType: "pdf" | "epub" | "mobi";
   fileSize?: number;
   publicId?: string;
   isDownloadable?: boolean;
 }
 
 export interface IDocumentDoc extends IDocument, Document {}
+
