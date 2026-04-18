@@ -39,8 +39,7 @@ const getBooks = catchAsync(async (req: Request, res: Response) => {
   if (format === 'ebook') {
     filter.documentUrl = { $exists: true, $ne: null };
   } else if (format === 'physical') {
-    // For now, assume physical is just any book that isn't EXCLUSIVELY an ebook 
-    // (though in this system, they all have physical copies)
+    filter.documentUrl = { $exists: false };
   }
 
   const options = {

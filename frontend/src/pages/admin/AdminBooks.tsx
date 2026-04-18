@@ -33,6 +33,7 @@ const AdminBooks: React.FC = () => {
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
 
+  const [formatFilter, setFormatFilter] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
@@ -58,7 +59,7 @@ const AdminBooks: React.FC = () => {
       }
     }, 500);
     return () => clearTimeout(timer);
-  }, [searchQuery]);
+  }, [searchQuery, formatFilter]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -69,6 +70,7 @@ const AdminBooks: React.FC = () => {
             page: currentPage,
             limit: 10,
             title: searchQuery || undefined,
+            format: formatFilter || undefined,
           },
         }),
         api.get("/categories"),
@@ -221,15 +223,26 @@ const AdminBooks: React.FC = () => {
 
       <div className="premium-card p-0 overflow-hidden">
         <div className="p-6 border-b border-on-surface/10 flex flex-col md:flex-row gap-4 justify-between items-center bg-on-surface/[0.01]">
-          <div className="relative w-full md:w-96 group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface/50 group-focus-within:text-primary transition-colors" />
-            <input
-              type="text"
-              placeholder="Tìm kiếm theo tiêu đề, tác giả..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-background border border-on-surface/10 rounded-lg py-2.5 pl-11 pr-4 text-sm focus:outline-none focus:border-primary/50 transition-all text-on-surface"
-            />
+          <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+            <div className="relative w-full md:w-80 group">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface/50 group-focus-within:text-primary transition-colors" />
+              <input
+                type="text"
+                placeholder="Tìm tiêu đề, tác giả..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-background border border-on-surface/10 rounded-lg py-2.5 pl-11 pr-4 text-sm focus:outline-none focus:border-primary/50 transition-all text-on-surface"
+              />
+            </div>
+            <select
+              value={formatFilter}
+              onChange={(e) => setFormatFilter(e.target.value)}
+              className="bg-background border border-on-surface/10 rounded-lg py-2.5 px-4 text-sm focus:outline-none focus:border-primary/50 transition-all text-on-surface font-medium cursor-pointer"
+            >
+              <option value="">Tất cả loại sách</option>
+              <option value="ebook">Ebook</option>
+              <option value="physical">Sách vật lý</option>
+            </select>
           </div>
         </div>
 
@@ -240,6 +253,7 @@ const AdminBooks: React.FC = () => {
                 <th className="px-6 py-4">Sách</th>
                 <th className="px-6 py-4">ISBN</th>
                 <th className="px-6 py-4">Danh mục</th>
+                <th className="px-6 py-4">Định dạng</th>
                 <th className="px-6 py-4">Tài liệu số</th>
                 <th className="px-6 py-4 text-right">Thao tác</th>
               </tr>
@@ -261,13 +275,16 @@ const AdminBooks: React.FC = () => {
                       <div className="h-6 w-16 bg-on-surface/5 rounded"></div>
                     </td>
                     <td className="px-6 py-4">
+                      <div className="h-6 w-16 bg-on-surface/5 rounded"></div>
+                    </td>
+                    <td className="px-6 py-4">
                       <div className="h-6 w-20 bg-on-surface/5 ml-auto rounded"></div>
                     </td>
                   </tr>
                 ))
               ) : books.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-20 text-center">
+                  <td colSpan={6} className="px-6 py-20 text-center">
                     <div className="flex flex-col items-center gap-2 opacity-20 text-on-surface">
                       <BookOpen className="w-12 h-12" />
                       <p className="italic">Không tìm thấy sách phù hợp.</p>
@@ -310,6 +327,18 @@ const AdminBooks: React.FC = () => {
                       <span className="text-[11px] font-bold px-2 py-1 bg-on-surface/5 rounded text-on-surface/70 border border-on-surface/10 uppercase tracking-tight">
                         {book.category?.name || "Chưa phân loại"}
                       </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-wrap gap-1">
+                        {book.documentUrl && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 bg-indigo-500/10 text-indigo-500 border border-indigo-500/20 rounded uppercase tracking-tighter">
+                            Ebook
+                          </span>
+                        )}
+                        <span className="text-[10px] font-bold px-2 py-0.5 bg-teal-500/10 text-teal-500 border border-teal-500/20 rounded uppercase tracking-tighter">
+                          Vật lý
+                        </span>
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       {book.documentUrl ? (
