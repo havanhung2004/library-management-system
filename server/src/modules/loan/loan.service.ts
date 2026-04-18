@@ -173,7 +173,7 @@ const queryLoans = async (filter: any, options: any) => {
     .populate("userId", "profile.firstName profile.lastName email")
     .populate({
       path: "copyId",
-      populate: { path: "bookId", select: "title author coverImage" },
+      populate: { path: "bookId", select: "title author coverImage documentUrl" },
     });
 
   const totalResults = await Loan.countDocuments(finalFilter);

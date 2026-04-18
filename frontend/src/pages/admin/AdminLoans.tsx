@@ -129,6 +129,7 @@ const AdminLoans: React.FC = () => {
               <tr className="bg-on-surface/[0.02] text-on-surface/50 text-[10px] font-black uppercase tracking-widest border-b border-on-surface/5">
                 <th className="px-6 py-4">Thành viên</th>
                 <th className="px-6 py-4">Email</th>
+                <th className="px-6 py-4">Loại</th>
                 <th className="px-6 py-4">Tài liệu mượn</th>
                 <th className="px-6 py-4">Thời gian mượn</th>
                 <th className="px-6 py-4">Thời hạn mượn</th>
@@ -209,6 +210,17 @@ const AdminLoans: React.FC = () => {
                         <p className="text-sm text-on-surface/60 font-medium">
                           {loan.userId?.email || "---"}
                         </p>
+                      </td>
+                      <td className="px-6 py-4">
+                        {loan.copyId?.bookId?.documentUrl ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-black bg-indigo-500/10 text-indigo-500 border border-indigo-500/20 uppercase tracking-tighter">
+                            EBOOK
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-black bg-teal-500/10 text-teal-500 border border-teal-500/20 uppercase tracking-tighter">
+                            VẬT LÝ
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2 text-on-surface/80 group-hover:text-on-background transition-colors">
