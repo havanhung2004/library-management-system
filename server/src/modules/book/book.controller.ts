@@ -51,7 +51,7 @@ const getBooks = catchAsync(async (req: Request, res: Response) => {
   const result = await bookService.queryBooks(filter, options);
 
   // Add availability info to each book
-  const Copy = (await import('../copy/copy.model')).default;
+  const Copy = (await import('./copy.model')).default;
   const enrichedResults = await Promise.all(
     result.results.map(async (book: any) => {
       const totalCopies = await Copy.countDocuments({ bookId: book._id });
@@ -83,7 +83,7 @@ const getBook = catchAsync(async (req: Request, res: Response) => {
     return;
   }
 
-  const Copy = (await import('../copy/copy.model')).default;
+  const Copy = (await import('./copy.model')).default;
   const totalCopies = await Copy.countDocuments({ bookId: book._id });
   const availableCopies = await Copy.countDocuments({ bookId: book._id, status: 'available' });
 

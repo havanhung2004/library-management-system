@@ -205,6 +205,7 @@ const Home: React.FC = () => {
                   <p className="text-on-surface/60 text-sm mb-4">
                     {book.author}
                   </p>
+                  <div className="flex items-center gap-4 text-on-surface/60 text-xs">
                     <span className={`flex items-center gap-1 ${
                       book.availableCopies > 0 ? "text-green-500" : "text-accent"
                     }`}>
