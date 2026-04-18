@@ -152,34 +152,47 @@ const clearAndSeedData = async () => {
     }
     logger.info("5000 books and 15,000 copies created");
 
-    // 5. Seed 2500 Loans
-    const allCopies = await Copy.find({}).limit(3000); // Sample some copies
+    // 5. Seed 2500 Loans (50% Ebook, 50% Physical)
+    const ebookBookIds = allBooks.filter(b => b.documentUrl).map(b => b._id);
+    const physicalBookIds = allBooks.filter(b => !b.documentUrl).map(b => b._id);
+
+    const ebookCopies = await Copy.find({ bookId: { $in: ebookBookIds } }).limit(2000);
+    const physicalCopies = await Copy.find({ bookId: { $in: physicalBookIds } }).limit(2000);
+
     const loanData = [];
     const now = new Date();
 
-    for (let i = 0; i < 2500; i++) {
-      const user = users[i % users.length];
-      const copy = allCopies[i % allCopies.length];
-      const status = i < 200 ? "pending" : i < 800 ? "active" : i < 1200 ? "overdue" : "returned";
+    // Generate 1250 loans for each type
+    const types = [
+        { copies: ebookCopies, count: 1250 },
+        { copies: physicalCopies, count: 1250 }
+    ];
 
-      const borrowDate = new Date();
-      borrowDate.setMonth(now.getMonth() - Math.floor(Math.random() * 6));
-      borrowDate.setDate(Math.floor(Math.random() * 28) + 1);
+    let totalLoanIdx = 0;
+    for (const typeGroup of types) {
+        for (let i = 0; i < typeGroup.count; i++) {
+            const user = users[totalLoanIdx % users.length];
+            const copy = typeGroup.copies[i % typeGroup.copies.length];
+            const status = totalLoanIdx < 200 ? "pending" : totalLoanIdx < 800 ? "active" : totalLoanIdx < 1200 ? "overdue" : "returned";
 
-      const dueDate = new Date(borrowDate.getTime() + 14 * 24 * 60 * 60 * 1000);
-      let returnDate = status === "returned" ? new Date(dueDate.getTime() + (Math.random() > 0.5 ? -2 : 5) * 24 * 60 * 60 * 1000) : undefined;
+            const borrowDate = new Date();
+            borrowDate.setMonth(now.getMonth() - Math.floor(Math.random() * 6));
+            borrowDate.setDate(Math.floor(Math.random() * 28) + 1);
 
-      loanData.push({
-        userId: user._id,
-        copyId: copy._id,
-        borrowDate,
-        dueDate,
-        returnDate,
-        status,
-        createdAt: borrowDate,
-      });
+            const dueDate = new Date(borrowDate.getTime() + 14 * 24 * 60 * 60 * 1000);
+            let returnDate = status === "returned" ? new Date(dueDate.getTime() + (Math.random() > 0.5 ? -2 : 5) * 24 * 60 * 60 * 1000) : undefined;
 
-      // Update copy status for active/overdue in DB later or manually
+            loanData.push({
+                userId: user._id,
+                copyId: copy._id,
+                borrowDate,
+                dueDate,
+                returnDate,
+                status,
+                createdAt: borrowDate,
+            });
+            totalLoanIdx++;
+        }
     }
     const seededLoans = await Loan.insertMany(loanData);
     
