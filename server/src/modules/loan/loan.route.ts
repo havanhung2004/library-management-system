@@ -26,7 +26,7 @@ router.post(
 );
 router.post(
   "/return/:loanId",
-  auth("superadmin", "admin", "librarian"),
+  auth(),
   validate(loanValidation.returnBook),
   loanController.returnBook,
 );

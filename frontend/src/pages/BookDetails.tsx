@@ -167,9 +167,17 @@ const BookDetails: React.FC = () => {
               <span className="flex items-center gap-2">
                 <Calendar className="w-5 h-5" /> {book.publishedYear || "2024"}
               </span>
-              <span className="bg-on-surface/5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest">
+              <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest border border-primary/20">
                 {book.category?.name || "Khác"}
               </span>
+              <span className="bg-blue-500/10 text-blue-500 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest border border-blue-500/20">
+                Sách vật lý
+              </span>
+              {book.documentUrl && (
+                <span className="bg-purple-500/10 text-purple-500 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest border border-purple-500/20">
+                  Ebook
+                </span>
+              )}
             </div>
           </div>
 
@@ -190,14 +198,25 @@ const BookDetails: React.FC = () => {
                   <FileText className="w-8 h-8 text-primary mb-4" />
                   <h4 className="font-bold text-lg mb-2">Tài liệu số (PDF)</h4>
                   <p className="text-on-surface/50 text-sm mb-6">
-                    Đọc trực tuyến hoặc tải về cho mục đích học tập cá nhân.
+                    {userLoan?.status === "active" || userLoan?.status === "overdue"
+                      ? "Bạn có thể đọc tài liệu số trực tuyến với tính năng bảo mật cao."
+                      : "Trình xem trực tuyến sẽ khả dụng sau khi yêu cầu mượn được phê duyệt."}
                   </p>
-                  <button
-                    onClick={() => window.open(book.documentUrl, "_blank")}
-                    className="premium-button w-full flex items-center justify-center gap-2"
-                  >
-                    <Download className="w-4 h-4" /> Tải về máy
-                  </button>
+                  {userLoan?.status === "active" || userLoan?.status === "overdue" ? (
+                    <button
+                      onClick={() => navigate(`/reader/${bookId}`)}
+                      className="premium-button w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/80 transition-all shadow-lg shadow-primary/20"
+                    >
+                      <BookOpen className="w-4 h-4" /> Đọc trực tuyến
+                    </button>
+                  ) : (
+                    <button
+                      disabled
+                      className="premium-button w-full flex items-center justify-center gap-2 bg-on-surface/10 text-on-surface/40 border-on-surface/5 cursor-not-allowed"
+                    >
+                      <BookOpen className="w-4 h-4" /> Đọc trực tuyến (Cần mượn)
+                    </button>
+                  )}
                 </div>
               )}
 

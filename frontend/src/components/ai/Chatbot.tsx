@@ -132,11 +132,14 @@ const Chatbot: React.FC = () => {
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="absolute bottom-20 right-0 w-[90vw] sm:w-[400px] h-[70vh] sm:h-[600px] bg-surface/80 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl flex flex-col overflow-hidden max-h-[calc(100vh-120px)]"
+            className="absolute bottom-20 right-0 w-[90vw] sm:w-[400px] h-[70vh] sm:h-[600px] bg-surface/90 backdrop-blur-2xl border border-on-surface/10 rounded-3xl shadow-2xl flex flex-col overflow-hidden max-h-[calc(100vh-120px)]"
           >
             {/* Header */}
-            <div className="p-5 bg-gradient-to-r from-primary to-secondary flex items-center justify-between flex-shrink-0">
-              <div className="flex items-center gap-3">
+            <div className="p-5 bg-gradient-to-r from-primary to-secondary flex items-center justify-between flex-shrink-0 relative overflow-hidden">
+              {/* Shine effect for header */}
+              <div className="absolute inset-0 bg-white/10 skew-x-12 translate-x-1/2 -z-0" />
+              
+              <div className="flex items-center gap-3 relative z-10">
                 <div className="bg-white/20 p-2 rounded-xl backdrop-blur-md">
                   <Sparkles className="w-5 h-5 text-white" />
                 </div>
@@ -147,7 +150,7 @@ const Chatbot: React.FC = () => {
               </div>
               <button
                 onClick={() => setIsOpen(false)}
-                className="text-white/80 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/10"
+                className="text-white/80 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/10 relative z-10"
               >
                 <Minimize2 className="w-5 h-5" />
               </button>
@@ -157,13 +160,13 @@ const Chatbot: React.FC = () => {
             <div ref={chatRef} className="flex-1 p-4 overflow-y-auto space-y-4 scrollbar-hide">
               {messages.length === 0 && (
                 <div className="text-center py-8">
-                  <div className="inline-block p-4 rounded-full bg-white/5 mb-3">
+                  <div className="inline-block p-4 rounded-full bg-on-surface/5 mb-3">
                     <Bot className="w-8 h-8 text-primary opacity-50" />
                   </div>
-                  <h4 className="font-bold text-base mb-1">
+                  <h4 className="font-bold text-base mb-1 text-on-background">
                     Chào {user?.profile?.firstName || 'bạn'}! 👋
                   </h4>
-                  <p className="text-slate-400 text-sm mb-6">
+                  <p className="text-on-surface/60 text-sm mb-6">
                     Tôi có thể giúp bạn tìm sách, giải đáp quy định mượn/trả hoặc gợi ý tài liệu học tập.
                   </p>
                   {/* Quick suggestions */}
@@ -172,7 +175,7 @@ const Chatbot: React.FC = () => {
                       <button
                         key={s}
                         onClick={() => sendMessage(s)}
-                        className="px-3 py-1.5 text-xs font-medium bg-white/5 border border-white/10 rounded-full hover:bg-primary/10 hover:border-primary/30 hover:text-primary transition-all"
+                        className="px-3 py-1.5 text-xs font-medium bg-on-surface/5 border border-on-surface/10 rounded-full hover:bg-primary/10 hover:border-primary/30 hover:text-primary transition-all text-on-surface"
                       >
                         {s}
                       </button>
@@ -189,8 +192,8 @@ const Chatbot: React.FC = () => {
                   className={`flex gap-2.5 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
                 >
                   <div
-                    className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-1 ${
-                      msg.role === 'user' ? 'bg-secondary' : 'bg-gradient-to-br from-primary to-secondary'
+                    className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-1 shadow-sm ${
+                      msg.role === 'user' ? 'bg-secondary text-white' : 'bg-gradient-to-br from-primary to-secondary text-white'
                     }`}
                   >
                     {msg.role === 'user' ? (
@@ -200,10 +203,10 @@ const Chatbot: React.FC = () => {
                     )}
                   </div>
                   <div
-                    className={`max-w-[80%] p-3.5 rounded-2xl text-sm leading-relaxed space-y-1 ${
+                    className={`max-w-[80%] p-3.5 rounded-2xl text-sm leading-relaxed space-y-1 shadow-sm ${
                       msg.role === 'user'
-                        ? 'bg-secondary/20 text-white rounded-tr-none'
-                        : 'bg-white/5 text-slate-200 rounded-tl-none border border-white/5'
+                        ? 'bg-secondary text-white rounded-tr-none'
+                        : 'bg-on-surface/5 text-on-surface rounded-tl-none border border-on-surface/5'
                     }`}
                   >
                     {renderMarkdown(msg.parts[0].text)}
@@ -213,10 +216,10 @@ const Chatbot: React.FC = () => {
 
               {loading && (
                 <div className="flex gap-2.5">
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center animate-pulse">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center animate-pulse text-white">
                     <Bot className="w-3.5 h-3.5" />
                   </div>
-                  <div className="bg-white/5 px-4 py-3 rounded-2xl rounded-tl-none flex gap-1 items-center border border-white/5">
+                  <div className="bg-on-surface/5 px-4 py-3 rounded-2xl rounded-tl-none flex gap-1 items-center border border-on-surface/5">
                     <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" />
                     <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.15s' }} />
                     <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.3s' }} />
@@ -226,14 +229,14 @@ const Chatbot: React.FC = () => {
             </div>
 
             {/* Input */}
-            <form onSubmit={handleSubmit} className="p-4 bg-white/[0.03] border-t border-white/5 flex gap-2 flex-shrink-0">
+            <form onSubmit={handleSubmit} className="p-4 bg-on-surface/5 border-t border-on-surface/5 flex gap-2 flex-shrink-0">
               <input
                 ref={inputRef}
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Hỏi AI điều gì đó..."
-                className="flex-1 bg-background/80 border border-white/5 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:border-primary/50 transition-all"
+                className="flex-1 bg-surface border border-on-surface/10 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:border-primary/50 transition-all text-on-surface placeholder:text-on-surface/40"
               />
               <button
                 type="submit"

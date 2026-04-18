@@ -22,7 +22,9 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminReports from "./pages/admin/AdminReports";
 import ProjectGuide from "./pages/ProjectGuide";
 import TechnicalGuide from "./pages/TechnicalGuide";
+import BookReader from "./pages/BookReader";
 import Chatbot from "./components/ai/Chatbot";
+import NotFound from "./pages/NotFound";
 
 const App: React.FC = () => {
   return (
@@ -38,6 +40,14 @@ const App: React.FC = () => {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/books/:bookId" element={<BookDetails />} />
+                <Route 
+                  path="/reader/:bookId" 
+                  element={
+                    <ProtectedRoute>
+                      <BookReader />
+                    </ProtectedRoute>
+                  } 
+                />
                 <Route
                   path="/profile"
                   element={
@@ -83,6 +93,7 @@ const App: React.FC = () => {
                     </ProtectedRoute>
                   }
                 />
+                <Route path="*" element={<NotFound />} />
               </Routes>
             </main>
             <Chatbot />

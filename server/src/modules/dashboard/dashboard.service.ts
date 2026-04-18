@@ -98,9 +98,9 @@ const getPublicStats = async () => {
   ]);
 
   return {
-    totalBooks: totalBooks + 50000, // Adding base marketing number as requested by UI design
-    totalStudents: totalStudents + 15000,
-    totalLoans: totalLoans + 120000,
+    totalBooks,
+    totalStudents,
+    totalLoans,
   };
 };
 

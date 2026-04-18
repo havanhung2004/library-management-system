@@ -11,8 +11,9 @@ import {
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../lib/api";
-
+import { useAuth } from "../contexts/AuthContext";
 const Home: React.FC = () => {
+  const { user } = useAuth();
   const [books, setBooks] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -102,17 +103,17 @@ const Home: React.FC = () => {
           {[
             {
               label: "Tài liệu số",
-              value: (stats?.totalBooks || 50000).toLocaleString() + "+",
+              value: (stats?.totalBooks || 0).toLocaleString(),
               icon: BookOpen,
             },
             {
               label: "Sinh viên",
-              value: (stats?.totalStudents || 15000).toLocaleString() + "+",
+              value: (stats?.totalStudents || 0).toLocaleString(),
               icon: User,
             },
             {
               label: "Lượt mượn",
-              value: (stats?.totalLoans || 120000).toLocaleString() + "+",
+              value: (stats?.totalLoans || 0).toLocaleString(),
               icon: TrendingUp,
             },
             { label: "Truy cập 24/7", value: "Online", icon: Clock },
@@ -171,10 +172,10 @@ const Home: React.FC = () => {
                   whileInView={{ opacity: 1, scale: 1 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.1 }}
-                  className="group cursor-pointer"
-                  onClick={() => navigate(`/books/${book._id}`)}
+                  className="group"
                 >
-                  <div className="relative aspect-[3/4] rounded-2xl overflow-hidden mb-6 shadow-xl shadow-on-background/10">
+                  <Link to={`/books/${book._id}`} className="block">
+                    <div className="relative aspect-[3/4] rounded-2xl overflow-hidden mb-6 shadow-xl shadow-on-background/10">
                     <img
                       src={
                         book.coverImage ||
@@ -184,9 +185,17 @@ const Home: React.FC = () => {
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <div className="absolute top-4 left-4">
-                      <span className="bg-primary/90 text-white text-xs font-bold px-3 py-1 rounded-full backdrop-blur-sm">
+                    <div className="absolute top-4 left-4 flex flex-col gap-2 scale-90 origin-top-left">
+                      <span className="bg-primary/90 text-white text-xs font-bold px-3 py-1 rounded-full backdrop-blur-md border border-white/10 shadow-lg">
                         {book.category?.name || "Chung"}
+                      </span>
+                      {book.documentUrl && (
+                        <span className="bg-purple-500/90 text-white text-xs font-bold px-3 py-1 rounded-full backdrop-blur-md border border-white/10 shadow-lg">
+                          Ebook
+                        </span>
+                      )}
+                      <span className="bg-blue-500/90 text-white text-xs font-bold px-3 py-1 rounded-full backdrop-blur-md border border-white/10 shadow-lg">
+                        Sách vật lý
                       </span>
                     </div>
                   </div>
@@ -206,37 +215,40 @@ const Home: React.FC = () => {
                       4.8
                     </span>
                   </div>
-                </motion.div>
+                </Link>
+              </motion.div>
               ))}
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="container mx-auto px-6">
-        <div className="relative rounded-3xl overflow-hidden bg-primary p-12 text-center md:text-left md:flex items-center justify-between">
-          <div className="absolute top-0 right-0 w-1/2 h-full bg-white/10 skew-x-12 -z-0"></div>
-          <div className="relative z-10 max-w-xl">
-            <h2 className="text-4xl font-bold text-white mb-6">
-              Bắt đầu học tập ngay hôm nay
-            </h2>
-            <p className="text-white/80 text-lg mb-8">
-              Tham gia cùng hàng ngàn sinh viên HNUE đang sử dụng thư viện số
-              mỗi ngày. Hoàn toàn miễn phí cho cán bộ và sinh viên trường.
-            </p>
-            <Link
-              to="/register"
-              className="inline-block bg-white text-primary px-8 py-3 rounded-xl font-bold text-lg hover:bg-slate-100 hover:scale-105 transition-all shadow-xl shadow-black/20"
-            >
-              Đăng ký tài khoản
-            </Link>
-          </div>
-          <div className="relative z-10 hidden lg:block transform mt-12 md:mt-0">
-            <div className="w-64 h-80 bg-white/20 backdrop-blur-xl border border-white/30 rounded-2xl rotate-12 flex items-center justify-center">
-              <BookOpen className="w-24 h-24 text-white/50" />
+      {!user && (
+        <section className="container mx-auto px-6">
+          <div className="relative rounded-3xl overflow-hidden bg-primary p-12 text-center md:text-left md:flex items-center justify-between">
+            <div className="absolute top-0 right-0 w-1/2 h-full bg-white/10 skew-x-12 -z-0"></div>
+            <div className="relative z-10 max-w-xl">
+              <h2 className="text-4xl font-bold text-white mb-6">
+                Bắt đầu học tập ngay hôm nay
+              </h2>
+              <p className="text-white/80 text-lg mb-8">
+                Tham gia cùng hàng ngàn sinh viên HNUE đang sử dụng thư viện số
+                mỗi ngày. Hoàn toàn miễn phí cho cán bộ và sinh viên trường.
+              </p>
+              <Link
+                to="/register"
+                className="inline-block bg-white text-primary px-8 py-3 rounded-xl font-bold text-lg hover:bg-slate-100 hover:scale-105 transition-all shadow-xl shadow-black/20"
+              >
+                Đăng ký tài khoản
+              </Link>
+            </div>
+            <div className="relative z-10 hidden lg:block transform mt-12 md:mt-0">
+              <div className="w-64 h-80 bg-white/20 backdrop-blur-xl border border-white/30 rounded-2xl rotate-12 flex items-center justify-center">
+                <BookOpen className="w-24 h-24 text-white/50" />
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Book, Clock, Calendar, CheckCircle, AlertCircle, Bookmark, Shield, Briefcase, Mail, Camera, X, Loader2, DollarSign, CreditCard } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import api from '../lib/api';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -68,7 +68,8 @@ const Profile: React.FC = () => {
     fetchData();
   }, []);
 
-  const activeLoans = loans.filter(l => l.status === 'active');
+  const activeLoans = loans.filter(l => l.status === 'active' || l.status === 'overdue');
+  const totalTurns = loans.filter(l => l.status !== 'rejected' && l.status !== 'pending').length;
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,6 +102,18 @@ const Profile: React.FC = () => {
       console.error('Error uploading avatar:', error);
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleReturnEbook = async (loanId: string) => {
+    if (!window.confirm('Bạn có chắc chắn muốn trả Ebook này không? Sau khi trả, bạn sẽ không thể tiếp tục đọc tài liệu.')) return;
+    
+    try {
+      await api.post(`/loans/return/${loanId}`);
+      alert('Đã trả Ebook thành công!');
+      fetchData(); // Refresh loans list
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Có lỗi xảy ra khi trả Ebook.');
     }
   };
 
@@ -160,7 +173,7 @@ const Profile: React.FC = () => {
                   <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} disabled={isUploading} />
                 </label>
               </div>
-              <div className="absolute -bottom-2 -right-2 p-2 bg-surface border border-white/10 rounded-xl shadow-lg z-10">
+              <div className="absolute -bottom-2 -right-2 p-2 bg-surface border border-on-surface/10 rounded-xl shadow-lg z-10">
                 <Shield className="w-5 h-5 text-primary" />
               </div>
             </div>
@@ -168,20 +181,20 @@ const Profile: React.FC = () => {
             <h2 className="text-2xl font-bold mb-1">{fullUser?.profile?.firstName} {fullUser?.profile?.lastName}</h2>
             <p className="text-primary font-medium text-sm mb-6">{roleLabels[fullUser?.role || 'student']}</p>
             
-            <div className="space-y-4 text-left border-t border-white/5 pt-6">
-              <div className="flex items-center gap-3 text-slate-400">
+            <div className="space-y-4 text-left border-t border-on-surface/5 pt-6">
+              <div className="flex items-center gap-3 text-on-surface/40">
                 <Mail className="w-4 h-4" />
                 <span className="text-sm">{fullUser?.email}</span>
               </div>
-              <div className="flex items-center gap-3 text-slate-400">
+              <div className="flex items-center gap-3 text-on-surface/40">
                 <Bookmark className="w-4 h-4" />
                 <span className="text-sm">MSSV: {fullUser?.profile?.studentId || 'N/A'}</span>
               </div>
-              <div className="flex items-center gap-3 text-slate-400">
+              <div className="flex items-center gap-3 text-on-surface/40">
                 <Briefcase className="w-4 h-4" />
                 <span className="text-sm">Khoa: {fullUser?.profile?.department || 'N/A'}</span>
               </div>
-              <div className="flex items-center gap-3 text-slate-400">
+              <div className="flex items-center gap-3 text-on-surface/40">
                 <Calendar className="w-4 h-4" />
                 <span className="text-sm text-xs italic">Thành viên từ: {format(new Date(fullUser?.createdAt), 'MMMM yyyy', { locale: vi })}</span>
               </div>
@@ -189,7 +202,7 @@ const Profile: React.FC = () => {
             
             <button 
               onClick={() => setIsEditModalOpen(true)}
-              className="w-full mt-8 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-bold transition-all"
+              className="w-full mt-8 py-3 bg-on-surface/5 hover:bg-on-surface/10 border border-on-surface/10 rounded-xl text-sm font-bold transition-all"
             >
               Chỉnh sửa hồ sơ
             </button>
@@ -206,11 +219,11 @@ const Profile: React.FC = () => {
           <div className="grid grid-cols-2 gap-4">
             <div className="premium-card p-6 text-center">
               <div className="text-2xl font-bold text-primary mb-1">{activeLoans.length}</div>
-              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Đang mượn</div>
+              <div className="text-[10px] font-bold text-on-surface/50 uppercase tracking-widest">Đang mượn</div>
             </div>
             <div className="premium-card p-6 text-center">
-              <div className="text-2xl font-bold text-white mb-1">{loans.length}</div>
-              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Tổng lượt</div>
+              <div className="text-2xl font-bold text-on-background mb-1">{totalTurns}</div>
+              <div className="text-[10px] font-bold text-on-surface/50 uppercase tracking-widest">Tổng lượt</div>
             </div>
             <div className="premium-card p-6 text-center lg:col-span-2">
               <button 
@@ -220,7 +233,7 @@ const Profile: React.FC = () => {
                  <div className="text-2xl font-bold text-red-500 group-hover:scale-110 transition-transform flex items-center gap-2">
                    <DollarSign className="w-5 h-5" /> Phí phạt
                  </div>
-                 <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Kiểm tra & Thanh toán</div>
+                 <div className="text-[10px] font-bold text-on-surface/50 uppercase tracking-widest">Kiểm tra & Thanh toán</div>
               </button>
             </div>
           </div>
@@ -249,24 +262,38 @@ const Profile: React.FC = () => {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.1 }}
-                    className="premium-card p-6 flex gap-6 group"
                   >
-                    <div className="w-20 aspect-[3/4] rounded-lg overflow-hidden bg-slate-800 shadow-lg">
-                      <img 
-                        src={loan.copyId?.bookId?.coverImage || 'https://images.unsplash.com/photo-1543003968-240974628864?auto=format&fit=crop&q=80&w=200'} 
-                        alt={loan.copyId?.bookId?.title}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="mb-3">{getStatusBadge(loan)}</div>
-                      <h4 className="font-bold text-white mb-1 truncate">{loan.copyId?.bookId?.title || 'Tài liệu không xác định'}</h4>
-                      <p className="text-slate-400 text-xs mb-4">{loan.copyId?.bookId?.author}</p>
-                      <div className="flex items-center gap-2 text-[10px] text-slate-500">
-                        <Calendar className="w-3 h-3" />
-                        <span>Hết hạn: {format(new Date(loan.dueDate), 'dd/MM/yyyy')}</span>
+                    <Link to={`/books/${loan.copyId?.bookId?._id}`} className="premium-card p-6 flex gap-6 group hover:border-primary/50 transition-all">
+                      <div className="w-20 aspect-[3/4] rounded-lg overflow-hidden bg-slate-800 shadow-lg">
+                        <img 
+                          src={loan.copyId?.bookId?.coverImage || 'https://images.unsplash.com/photo-1543003968-240974628864?auto=format&fit=crop&q=80&w=200'} 
+                          alt={loan.copyId?.bookId?.title}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        />
                       </div>
-                    </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="mb-3">{getStatusBadge(loan)}</div>
+                        <h4 className="font-bold text-on-background mb-1 truncate group-hover:text-primary transition-colors">{loan.copyId?.bookId?.title || 'Tài liệu không xác định'}</h4>
+                        <p className="text-on-surface/60 text-xs mb-4">{loan.copyId?.bookId?.author}</p>
+                        <div className="flex items-center gap-2 text-[10px] text-slate-500 mb-4">
+                          <Calendar className="w-3 h-3" />
+                          <span>Hết hạn: {format(new Date(loan.dueDate), 'dd/MM/yyyy')}</span>
+                        </div>
+                        
+                        {loan.copyId?.bookId?.documentUrl && (
+                          <button 
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleReturnEbook(loan._id);
+                            }}
+                            className="w-full py-2 bg-green-500/10 hover:bg-green-500/20 text-green-500 border border-green-500/20 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all"
+                          >
+                            Trả Ebook ngay
+                          </button>
+                        )}
+                      </div>
+                    </Link>
                   </motion.div>
                 ))}
               </div>
@@ -282,7 +309,7 @@ const Profile: React.FC = () => {
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead>
-                    <tr className="bg-white/5 border-b border-white/10 uppercase text-[10px] font-bold tracking-widest text-slate-500">
+                    <tr className="bg-on-surface/5 border-b border-on-surface/10 uppercase text-[10px] font-bold tracking-widest text-on-surface/50">
                       <th className="px-6 py-4">Tài liệu</th>
                       <th className="px-6 py-4 text-center">Ngày mượn</th>
                       <th className="px-6 py-4 text-center">Hạn trả</th>
@@ -290,12 +317,14 @@ const Profile: React.FC = () => {
                       <th className="px-6 py-4 text-right">Trạng thái</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-white/5">
+                  <tbody className="divide-y divide-on-surface/5">
                     {loans.map((loan) => (
                       <tr key={loan._id} className="hover:bg-white/5 transition-colors">
                         <td className="px-6 py-4">
-                          <div className="font-bold text-sm text-white line-clamp-1">{loan.copyId?.bookId?.title || 'N/A'}</div>
-                          <div className="text-[10px] text-slate-500">{loan.copyId?.bookId?.author}</div>
+                          <Link to={`/books/${loan.copyId?.bookId?._id}`} className="group/row">
+                            <div className="font-bold text-sm text-on-background group-hover/row:text-primary transition-colors line-clamp-1">{loan.copyId?.bookId?.title || 'N/A'}</div>
+                            <div className="text-[10px] text-on-surface/50">{loan.copyId?.bookId?.author}</div>
+                          </Link>
                         </td>
                         <td className="px-6 py-4 text-center text-xs text-slate-400">
                           {format(new Date(loan.borrowDate), 'dd/MM/yyyy')}
@@ -341,11 +370,11 @@ const Profile: React.FC = () => {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-lg bg-surface border border-white/10 rounded-3xl shadow-2xl overflow-hidden"
+              className="relative w-full max-w-lg bg-surface border border-on-surface/10 rounded-3xl shadow-2xl overflow-hidden"
             >
-              <div className="p-8 border-b border-white/5 flex items-center justify-between">
+              <div className="p-8 border-b border-on-surface/5 flex items-center justify-between">
                 <h3 className="text-xl font-bold">Chỉnh sửa hồ sơ</h3>
-                <button onClick={() => setIsEditModalOpen(false)} className="p-2 hover:bg-white/5 rounded-xl transition-colors">
+                <button onClick={() => setIsEditModalOpen(false)} className="p-2 hover:bg-on-surface/5 rounded-xl transition-colors">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -402,7 +431,7 @@ const Profile: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setIsEditModalOpen(false)}
-                    className="flex-1 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl font-bold transition-all"
+                    className="flex-1 py-4 bg-on-surface/5 hover:bg-on-surface/10 border border-on-surface/10 rounded-2xl font-bold transition-all"
                   >
                     Hủy
                   </button>

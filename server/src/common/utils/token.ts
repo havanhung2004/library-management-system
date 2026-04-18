@@ -14,3 +14,7 @@ export const generateToken = (
   };
   return jwt.sign(payload, secret, options);
 };
+
+export const verifyToken = (token: string, secret: Secret = process.env.JWT_SECRET || 'secret') => {
+  return jwt.verify(token, secret);
+};

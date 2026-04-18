@@ -17,7 +17,7 @@ const borrowBook = catchAsync(async (req: Request, res: Response) => {
 });
 
 const returnBook = catchAsync(async (req: Request, res: Response) => {
-  const loan = await loanService.returnBook(req.params.loanId);
+  const loan = await loanService.returnBook(req.params.loanId, req.user);
   res.send({
     success: true,
     data: loan,

@@ -23,6 +23,7 @@ const Search: React.FC = () => {
   // Derive state from URL params
   const query = searchParams.get("q") || searchParams.get("title") || "";
   const categoryId = searchParams.get("category") || "";
+  const format = searchParams.get("format") || "";
   const page = Number(searchParams.get("page") || "1");
 
   const [showFilters, setShowFilters] = useState(false);
@@ -59,6 +60,7 @@ const Search: React.FC = () => {
         params: {
           q: query || undefined,
           category: categoryId || undefined,
+          format: format || undefined,
           page,
           limit: LIMIT,
         },
@@ -70,7 +72,7 @@ const Search: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [query, categoryId, page]);
+  }, [query, categoryId, format, page]);
 
   useEffect(() => {
     fetchBooks();
@@ -133,6 +135,31 @@ const Search: React.FC = () => {
                   }`}
                 >
                   {cat.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs font-bold text-on-surface/50 uppercase tracking-wider mb-3 block">
+              Loại tài liệu
+            </label>
+            <div className="flex flex-col gap-1.5">
+              {[
+                { id: "", name: "Tất cả" },
+                { id: "physical", name: "Sách vật lý" },
+                { id: "ebook", name: "Ebook" },
+              ].map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => updateParams({ format: f.id, page: "1" })}
+                  className={`w-full text-left px-4 py-2 rounded-lg text-sm transition-all ${
+                    f.id === format
+                      ? "bg-primary/20 text-primary border border-primary/30"
+                      : "text-on-surface/60 hover:bg-surface-hover border border-transparent"
+                  }`}
+                >
+                  {f.name}
                 </button>
               ))}
             </div>
@@ -208,42 +235,49 @@ const Search: React.FC = () => {
                       transition={{ delay: i * 0.04 }}
                       className="premium-card group hover:-translate-y-1"
                     >
-                      <div className="aspect-[3/4] rounded-lg overflow-hidden mb-4 bg-surface-hover relative">
-                        {book.coverImage ? (
-                          <img
-                            src={book.coverImage}
-                            alt={book.title}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex flex-col items-center justify-center text-on-surface/40 italic">
-                            <BookOpen className="w-12 h-12 mb-2 opacity-20" />
-                            <span className="text-xs">Chưa có ảnh bìa</span>
+                      <Link to={`/books/${book._id}`} className="block">
+                        <div className="aspect-[3/4] rounded-lg overflow-hidden mb-4 bg-surface-hover relative">
+                          {book.coverImage ? (
+                            <img
+                              src={book.coverImage}
+                              alt={book.title}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center text-on-surface/40 italic">
+                              <BookOpen className="w-12 h-12 mb-2 opacity-20" />
+                              <span className="text-xs">Chưa có ảnh bìa</span>
+                            </div>
+                          )}
+                          <div className="absolute top-2 right-2 flex flex-col items-end gap-1.5 scale-90 origin-top-right">
+                            <span className="bg-primary/90 backdrop-blur-md text-[10px] font-bold px-3 py-1 rounded-full text-white border border-white/10 shadow-lg">
+                              {book.category?.name || "Chung"}
+                            </span>
+                            {book.documentUrl && (
+                              <span className="bg-purple-500/90 backdrop-blur-md text-[10px] font-bold px-3 py-1 rounded-full text-white border border-white/10 shadow-lg">
+                                Ebook
+                              </span>
+                            )}
+                            <span className="bg-blue-500/90 backdrop-blur-md text-[10px] font-bold px-3 py-1 rounded-full text-white border border-white/10 shadow-lg">
+                              Sách vật lý
+                            </span>
                           </div>
-                        )}
-                        <div className="absolute top-2 right-2">
-                          <span className="bg-primary/90 backdrop-blur-sm text-[10px] font-bold px-2 py-1 rounded text-white border border-white/10">
-                            {book.category?.name || "Chung"}
-                          </span>
                         </div>
-                      </div>
-                      <h3 className="font-bold mb-1 text-on-background group-hover:text-primary transition-colors line-clamp-1">
-                        {book.title}
-                      </h3>
-                      <p className="text-on-surface/60 text-sm mb-4">
-                        {book.author}
-                      </p>
-                      <div className="flex items-center justify-between mt-auto pt-4 border-t border-on-surface/5">
-                        <span className="text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider bg-green-500/10 text-green-500">
-                          Sẵn có
-                        </span>
-                        <Link
-                          to={`/books/${book._id}`}
-                          className="p-1.5 bg-surface-hover rounded-full hover:bg-primary hover:text-white transition-all text-on-surface/60"
-                        >
-                          <ChevronRight className="w-4 h-4" />
-                        </Link>
-                      </div>
+                        <h3 className="font-bold mb-1 text-on-background group-hover:text-primary transition-colors line-clamp-1">
+                          {book.title}
+                        </h3>
+                        <p className="text-on-surface/60 text-sm mb-4">
+                          {book.author}
+                        </p>
+                        <div className="flex items-center justify-between mt-auto pt-4 border-t border-on-surface/5">
+                          <span className="text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider bg-green-500/10 text-green-500">
+                            Sẵn có
+                          </span>
+                          <div className="p-1.5 bg-surface-hover rounded-full hover:bg-primary hover:text-white transition-all text-on-surface/60">
+                            <ChevronRight className="w-4 h-4" />
+                          </div>
+                        </div>
+                      </Link>
                     </motion.div>
                   ))}
                 </AnimatePresence>

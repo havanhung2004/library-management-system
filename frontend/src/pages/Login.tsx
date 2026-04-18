@@ -24,7 +24,7 @@ const Login: React.FC = () => {
     try {
       const response = await api.post("/auth/login", { email, password });
       const { tokens, user } = response.data.data;
-      login(tokens.access.token, user);
+      login(tokens, user);
 
       const from = (location.state as any)?.from?.pathname || "/";
       navigate(from, { replace: true });

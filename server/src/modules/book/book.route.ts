@@ -37,4 +37,10 @@ router.post(
   bookController.uploadCover
 );
 
+router.get(
+  '/:bookId/document',
+  auth(),
+  bookController.getBookDocument
+);
+
 export default router;

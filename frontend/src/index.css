@@ -41,14 +41,14 @@
   --secondary: #06b6d4;
   --accent: #f43f5e;
 
-  /* Light Mode (Default) */
-  --background: #f8fafc;
-  --surface: #ffffff;
-  --surface-rgb: 255, 255, 255;
-  --surface-hover: #f1f5f9;
-  --on-surface: #1e293b;
-  --on-surface-rgb: 30, 41, 59;
-  --on-background: #0f172a;
+  /* Light Mode (Softer Palette) */
+  --background: #f1f5f9;
+  --surface: #f8fafc;
+  --surface-rgb: 248, 250, 252;
+  --surface-hover: #e2e8f0;
+  --on-surface: #334155;
+  --on-surface-rgb: 51, 65, 85;
+  --on-background: #1e293b;
 }
 
 .dark {

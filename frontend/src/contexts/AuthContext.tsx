@@ -31,14 +31,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(false);
   }, []);
 
-  const login = (token: string, userData: User) => {
-    localStorage.setItem('token', token);
+  const login = (tokens: { access: { token: string }, refresh: { token: string } }, userData: User) => {
+    localStorage.setItem('token', tokens.access.token);
+    localStorage.setItem('refreshToken', tokens.refresh.token);
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
   };
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
     setUser(null);
   };

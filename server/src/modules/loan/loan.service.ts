@@ -56,10 +56,28 @@ const borrowBook = async (
   return loan;
 };
 
-const returnBook = async (loanId: string) => {
-  const loan = await Loan.findById(loanId);
+const returnBook = async (loanId: string, user?: any) => {
+  const loan = await Loan.findById(loanId).populate({
+    path: "copyId",
+    populate: { path: "bookId" },
+  });
+
   if (!loan || loan.status === "returned") {
     throw new ApiError(400, "Invalid loan record");
+  }
+
+  // If a user is provided and is not an admin/librarian, enforce restrictions
+  if (user && !["superadmin", "admin", "librarian"].includes(user.role)) {
+    // Check if the loan belongs to the user
+    if (loan.userId.toString() !== user._id.toString()) {
+      throw new ApiError(403, "Bạn không có quyền thực hiện thao tác này trên lượt mượn của người khác.");
+    }
+
+    // Check if the book is an ebook
+    const book = (loan.copyId as any)?.bookId;
+    if (!book || !book.documentUrl) {
+      throw new ApiError(403, "Chỉ nhân viên thư viện mới có quyền xác nhận trả sách vật lý sau khi kiểm tra tình trạng.");
+    }
   }
 
   loan.status = "returned";
@@ -104,7 +122,7 @@ const returnBook = async (loanId: string) => {
 const getLoansByUser = async (userId: Types.ObjectId) => {
   return Loan.find({ userId }).populate({
     path: "copyId",
-    populate: { path: "bookId", select: "title author coverImage" },
+    populate: { path: "bookId", select: "title author coverImage documentUrl" },
   });
 };
 
@@ -175,7 +193,7 @@ const getAllLoans = async () => {
     .populate("userId", "profile.firstName profile.lastName email")
     .populate({
       path: "copyId",
-      populate: { path: "bookId", select: "title author" },
+      populate: { path: "bookId", select: "title author documentUrl" },
     })
     .sort({ createdAt: -1 });
 };
@@ -237,6 +255,17 @@ const rejectLoan = async (loanId: string) => {
   return loan;
 };
 
+const hasActiveLoan = async (userId: Types.ObjectId | string, bookId: string) => {
+  const copies = await Copy.find({ bookId }).select("_id");
+  const copyIds = copies.map((c) => c._id);
+  const loan = await Loan.findOne({
+    userId,
+    copyId: { $in: copyIds },
+    status: { $in: ["active", "overdue"] },
+  });
+  return !!loan;
+};
+
 export default {
   borrowBook,
   approveLoan,
@@ -245,5 +274,6 @@ export default {
   getLoansByUser,
   getAllLoans,
   queryLoans,
+  hasActiveLoan,
 };
 

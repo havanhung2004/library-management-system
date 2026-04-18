@@ -27,7 +27,7 @@ const Register: React.FC = () => {
     try {
       const response = await api.post("/auth/register", formData);
       const { tokens, user } = response.data.data;
-      login(tokens.access.token, user);
+      login(tokens, user);
       navigate("/");
     } catch (err: any) {
       setError(

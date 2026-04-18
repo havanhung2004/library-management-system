@@ -115,7 +115,7 @@ const AdminLoans: React.FC = () => {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface/50 group-focus-within:text-primary transition-colors" />
             <input
               type="text"
-              placeholder="Tìm theo tên người mượn..."
+              placeholder="Tìm theo tên, email, tiêu đề sách..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-background border border-on-surface/10 rounded-lg py-2.5 pl-11 pr-4 text-sm focus:outline-none focus:border-primary/50 transition-all text-on-surface"
@@ -128,6 +128,7 @@ const AdminLoans: React.FC = () => {
             <thead>
               <tr className="bg-on-surface/[0.02] text-on-surface/50 text-[10px] font-black uppercase tracking-widest border-b border-on-surface/5">
                 <th className="px-6 py-4">Thành viên</th>
+                <th className="px-6 py-4">Email</th>
                 <th className="px-6 py-4">Tài liệu mượn</th>
                 <th className="px-6 py-4">Thời gian mượn</th>
                 <th className="px-6 py-4">Thời hạn mượn</th>
@@ -203,6 +204,11 @@ const AdminLoans: React.FC = () => {
                             </p>
                           </div>
                         </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="text-sm text-on-surface/60 font-medium">
+                          {loan.userId?.email || "---"}
+                        </p>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2 text-on-surface/80 group-hover:text-on-background transition-colors">

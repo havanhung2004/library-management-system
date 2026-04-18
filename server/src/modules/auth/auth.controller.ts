@@ -23,7 +23,19 @@ const login = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const logout = catchAsync(async (req: Request, res: Response) => {
+  await authService.logout(req.body.refreshToken);
+  res.status(204).send();
+});
+
+const refreshTokens = catchAsync(async (req: Request, res: Response) => {
+  const tokens = await authService.refreshAuth(req.body.refreshToken);
+  res.send({ success: true, data: { ...tokens } });
+});
+
 export default {
   register,
   login,
+  logout,
+  refreshTokens,
 };
