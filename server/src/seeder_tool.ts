@@ -223,6 +223,68 @@ const clearAndSeedData = async () => {
     await Fine.insertMany(fineData);
     logger.info("200 fines seeded");
 
+    // 7. Seed Notifications
+    const notificationData = [];
+    
+    // Notifications for Loans
+    for (const loan of seededLoans) {
+        const book = allBooks.find(b => b._id.toString() === (loan.copyId as any).bookId?.toString() || b.isbn === (loan as any).copyId?.barcode?.split('-')[1]);
+        // Note: loan data in seeder doesn't have populated copy, so we use a simplified approach
+        const title = "tài liệu"; // Fallback title
+        
+        switch (loan.status) {
+            case 'pending':
+                notificationData.push({
+                    userId: loan.userId,
+                    message: `Yêu cầu mượn sách của bạn đang được xử lý.`,
+                    type: 'INFO',
+                    createdAt: loan.createdAt
+                });
+                break;
+            case 'active':
+                notificationData.push({
+                    userId: loan.userId,
+                    message: `Bạn đã mượn sách thành công. Hạn trả là ${loan.dueDate.toLocaleDateString('vi-VN')}.`,
+                    type: 'SUCCESS',
+                    createdAt: loan.createdAt
+                });
+                break;
+            case 'overdue':
+                notificationData.push({
+                    userId: loan.userId,
+                    message: `Sách mượn của bạn đã quá hạn. Vui lòng trả sớm để tránh phát sinh phí.`,
+                    type: 'WARNING',
+                    createdAt: loan.dueDate
+                });
+                break;
+            case 'returned':
+                notificationData.push({
+                    userId: loan.userId,
+                    message: `Bạn đã trả sách thành công. Cảm ơn bạn!`,
+                    type: 'SUCCESS',
+                    createdAt: loan.returnDate
+                });
+                break;
+        }
+    }
+
+    // Notifications for Fines
+    for (const fine of fineData) {
+        notificationData.push({
+            userId: fine.userId,
+            message: `Bạn có một khoản phí phạt mới: ${fine.amount.toLocaleString()}đ cho việc trả sách muộn.`,
+            type: 'DANGER',
+            createdAt: fine.createdAt
+        });
+    }
+
+    // Seed in batches to avoid overwhelming MongoDB
+    const NOTIF_BATCH = 1000;
+    for (let i = 0; i < notificationData.length; i += NOTIF_BATCH) {
+        await Notification.insertMany(notificationData.slice(i, i + NOTIF_BATCH));
+    }
+    logger.info(`${notificationData.length} notifications seeded`);
+
     logger.info("HIGH-VOLUME SEEDING COMPLETED SUCCESSFULLY!");
     process.exit(0);
   } catch (error) {
