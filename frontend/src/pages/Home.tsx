@@ -205,10 +205,10 @@ const Home: React.FC = () => {
                   <p className="text-on-surface/60 text-sm mb-4">
                     {book.author}
                   </p>
-                  <div className="flex items-center gap-4 text-on-surface/60 text-xs">
-                    <span className="flex items-center gap-1">
-                      <BookOpen className="w-3 h-3" /> {book.availableCopies}{" "}
-                      bản
+                    <span className={`flex items-center gap-1 ${
+                      book.availableCopies > 0 ? "text-green-500" : "text-accent"
+                    }`}>
+                      <BookOpen className="w-3 h-3" /> {book.availableCopies > 0 ? `${book.availableCopies} bản` : "Hết sách"}
                     </span>
                     <span className="flex items-center gap-1">
                       <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />{" "}

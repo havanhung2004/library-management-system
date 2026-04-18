@@ -130,15 +130,17 @@ const BookDetails: React.FC = () => {
           <div className="premium-card space-y-4">
             <div className="flex justify-between items-center text-sm border-b border-on-surface/5 pb-3">
               <span className="text-on-surface/50 flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-green-500" /> Sẵn có
+                <CheckCircle className={`w-4 h-4 ${book.availableCopies > 0 ? 'text-green-500' : 'text-on-surface/20'}`} /> Sẵn có
               </span>
-              <span className="font-bold">12 bản</span>
+              <span className={`font-bold ${book.availableCopies === 0 ? 'text-accent' : ''}`}>
+                {book.availableCopies ?? 0} bản
+              </span>
             </div>
             <div className="flex justify-between items-center text-sm border-b border-on-surface/5 pb-3">
               <span className="text-on-surface/50 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-primary" /> Loại
+                <AlertCircle className="w-4 h-4 text-primary" /> Tổng số
               </span>
-              <span className="font-bold">Giáo trình</span>
+              <span className="font-bold">{book.totalCopies ?? 0} bản</span>
             </div>
             <div className="flex justify-between items-center text-sm">
               <span className="text-on-surface/50 flex items-center gap-2">
@@ -228,9 +230,9 @@ const BookDetails: React.FC = () => {
                 </p>
                 <button
                   onClick={handleBorrow}
-                  disabled={borrowing || !!userLoan}
+                  disabled={borrowing || !!userLoan || book.availableCopies === 0}
                   className={`premium-button w-full flex items-center justify-center gap-2 shadow-secondary/20 ${
-                    userLoan
+                    userLoan || book.availableCopies === 0
                       ? "bg-on-surface/10 text-on-surface/50 border-on-surface/5 cursor-not-allowed"
                       : "bg-secondary hover:bg-secondary/80 text-white"
                   }`}
@@ -241,7 +243,9 @@ const BookDetails: React.FC = () => {
                       ? userLoan.status === "pending"
                         ? "YÊU CẦU ĐANG CHỜ DUYỆT"
                         : "BẠN ĐANG MƯỢN SÁCH NÀY"
-                      : "Mượn sách"}
+                      : book.availableCopies === 0
+                        ? "HẾT SÁCH SẴN CÓ"
+                        : "Mượn sách"}
                 </button>
               </div>
             </div>

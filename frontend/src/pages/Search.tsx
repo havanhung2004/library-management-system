@@ -270,8 +270,12 @@ const Search: React.FC = () => {
                           {book.author}
                         </p>
                         <div className="flex items-center justify-between mt-auto pt-4 border-t border-on-surface/5">
-                          <span className="text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider bg-green-500/10 text-green-500">
-                            Sẵn có
+                          <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider ${
+                            book.availableCopies > 0 
+                              ? "bg-green-500/10 text-green-500" 
+                              : "bg-accent/10 text-accent"
+                          }`}>
+                            {book.availableCopies > 0 ? `${book.availableCopies} BẢN` : "HẾT SÁCH"}
                           </span>
                           <div className="p-1.5 bg-surface-hover rounded-full hover:bg-primary hover:text-white transition-all text-on-surface/60">
                             <ChevronRight className="w-4 h-4" />

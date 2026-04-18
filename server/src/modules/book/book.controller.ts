@@ -49,9 +49,24 @@ const getBooks = catchAsync(async (req: Request, res: Response) => {
     page: Number(page),
   };
   const result = await bookService.queryBooks(filter, options);
+
+  // Add availability info to each book
+  const Copy = (await import('../copy/copy.model')).default;
+  const enrichedResults = await Promise.all(
+    result.results.map(async (book: any) => {
+      const totalCopies = await Copy.countDocuments({ bookId: book._id });
+      const availableCopies = await Copy.countDocuments({ bookId: book._id, status: 'available' });
+      return {
+        ...book.toObject(),
+        totalCopies,
+        availableCopies,
+      };
+    })
+  );
+
   res.send({
     success: true,
-    data: result.results,
+    data: enrichedResults,
     meta: {
       page: result.page,
       limit: result.limit,
@@ -67,9 +82,18 @@ const getBook = catchAsync(async (req: Request, res: Response) => {
     res.status(404).send({ success: false, message: 'Book not found' });
     return;
   }
+
+  const Copy = (await import('../copy/copy.model')).default;
+  const totalCopies = await Copy.countDocuments({ bookId: book._id });
+  const availableCopies = await Copy.countDocuments({ bookId: book._id, status: 'available' });
+
   res.send({
     success: true,
-    data: book,
+    data: {
+      ...book.toObject(),
+      totalCopies,
+      availableCopies,
+    },
   });
 });
 
