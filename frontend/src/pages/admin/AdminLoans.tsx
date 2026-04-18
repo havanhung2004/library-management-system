@@ -9,11 +9,12 @@ const AdminLoans: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("Tất cả");
   const [currentPage, setCurrentPage] = useState(1);
+  const [filterFormat, setFilterFormat] = useState("Tất cả");
   const [meta, setMeta] = useState({ page: 1, totalPages: 1, totalResults: 0 });
 
   useEffect(() => {
     fetchLoans();
-  }, [filterStatus, currentPage]);
+  }, [filterStatus, filterFormat, currentPage]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -32,6 +33,7 @@ const AdminLoans: React.FC = () => {
       const response = await api.get("/loans", {
         params: {
           status: filterStatus !== "Tất cả" ? filterStatus : undefined,
+          type: filterFormat !== "Tất cả" ? (filterFormat === "Ebook" ? "ebook" : "physical") : undefined,
           search: searchQuery || undefined,
           page: currentPage,
           limit: 10,
@@ -111,7 +113,25 @@ const AdminLoans: React.FC = () => {
               </button>
             ))}
           </div>
-          <div className="relative w-full md:w-80 group">
+          <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
+            <div className="relative group">
+              <select
+                value={filterFormat}
+                onChange={(e) => {
+                  setFilterFormat(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="appearance-none bg-background border border-on-surface/10 rounded-lg py-2.5 pl-4 pr-10 text-xs font-bold focus:outline-none focus:border-primary/50 transition-all text-on-surface cursor-pointer"
+              >
+                <option value="Tất cả">TẤT CẢ LOẠI</option>
+                <option value="Ebook">EBOOK</option>
+                <option value="Sách vật lý">SÁCH VẬT LÝ</option>
+              </select>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface/40">
+                <Clock className="w-3 h-3 rotate-180" />
+              </div>
+            </div>
+            <div className="relative w-full md:w-80 group">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface/50 group-focus-within:text-primary transition-colors" />
             <input
               type="text"

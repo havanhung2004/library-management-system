@@ -40,6 +40,7 @@ const getAllLoans = catchAsync(async (req: Request, res: Response) => {
     page = 1,
     sortBy = "createdAt:desc",
     search,
+    type,
   } = req.query;
   const filter: any = {};
 
@@ -60,6 +61,7 @@ const getAllLoans = catchAsync(async (req: Request, res: Response) => {
     page: Number(page),
     sortBy: sortBy as string,
     search: search as string,
+    type: type as string,
   };
 
   const result = await loanService.queryLoans(filter, options);

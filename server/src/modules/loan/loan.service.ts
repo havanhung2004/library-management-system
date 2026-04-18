@@ -162,6 +162,26 @@ const queryLoans = async (filter: any, options: any) => {
     };
   }
 
+  // Type filter (ebook vs physical)
+  const { type } = options;
+  if (type) {
+    const bookFilter: any = {};
+    if (type === 'ebook') {
+      bookFilter.documentUrl = { $exists: true, $ne: "" };
+    } else if (type === 'physical') {
+      bookFilter.documentUrl = { $exists: false };
+    }
+
+    if (Object.keys(bookFilter).length > 0) {
+      const books = await Book.find(bookFilter).select("_id");
+      const bookIds = books.map((b) => b._id);
+      const copies = await Copy.find({ bookId: { $in: bookIds } }).select("_id");
+      const copyIds = copies.map((c) => c._id);
+      
+      finalFilter.copyId = { ...(finalFilter.copyId || {}), $in: copyIds };
+    }
+  }
+
   const [sortField, sortOrder] = sortBy.split(":");
   const sort: any = {};
   sort[sortField] = sortOrder === "desc" ? -1 : 1;
