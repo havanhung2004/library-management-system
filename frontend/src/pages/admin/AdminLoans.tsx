@@ -142,8 +142,9 @@ const AdminLoans: React.FC = () => {
             />
           </div>
         </div>
+      </div>
 
-        <div className="overflow-x-auto">
+      <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
               <tr className="bg-on-surface/[0.02] text-on-surface/50 text-[10px] font-black uppercase tracking-widest border-b border-on-surface/5">
