@@ -1,4 +1,5 @@
 import Category from './category.model';
+import Book from './book.model';
 import { ICategory } from './book.interface';
 import { ApiError } from '../../common/utils/ApiError';
 
@@ -56,7 +57,13 @@ const deleteCategoryById = async (categoryId: string) => {
   if (!category) {
     throw new ApiError(404, 'Category not found');
   }
-  // Optional: Check if any books are using this category before deleting
+
+  // Kiểm tra danh mục có còn sách thuộc danh mục này hay không
+  const bookCount = await Book.countDocuments({ category: categoryId });
+  if (bookCount > 0) {
+    throw new ApiError(400, 'Không thể xóa danh mục vì danh mục này đang có sách.');
+  }
+
   await category.deleteOne();
   return category;
 };

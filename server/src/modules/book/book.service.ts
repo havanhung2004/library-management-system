@@ -1,4 +1,6 @@
 import Book from './book.model';
+import Copy from './copy.model';
+import Loan from '../loan/loan.model';
 import { IBook, IDocument } from './book.interface';
 import { ApiError } from '../../common/utils/ApiError';
 import { deleteFromCloudinary } from '../../common/utils/cloudinary';
@@ -57,6 +59,19 @@ const deleteBookById = async (bookId: string) => {
     throw new ApiError(404, 'Book not found');
   }
 
+  // Kiểm tra sách có đang được mượn hay không
+  const copies = await Copy.find({ bookId: book._id });
+  const copyIds = copies.map((copy) => copy._id);
+
+  const activeLoan = await Loan.findOne({
+    copyId: { $in: copyIds },
+    status: { $in: ['pending', 'active', 'overdue', 'renewed'] },
+  });
+
+  if (activeLoan) {
+    throw new ApiError(400, 'Không thể xóa sách vì sách đang được mượn.');
+  }
+
   // Delete associated document from Cloudinary if exists
   if (book.documentPublicId) {
     try {
@@ -75,6 +90,7 @@ const deleteBookById = async (bookId: string) => {
     }
   }
 
+  await Copy.deleteMany({ bookId: book._id });
   await book.deleteOne();
   return book;
 };

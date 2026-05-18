@@ -90,10 +90,11 @@ const AdminCategories: React.FC = () => {
     try {
       await api.delete(`/categories/${id}`);
       fetchCategories();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error deleting category:", err);
       alert(
-        "Không thể xóa danh mục này. Có thể có sách đang thuộc danh mục này.",
+        err.response?.data?.message ||
+          "Không thể xóa danh mục này. Có thể có sách đang thuộc danh mục này.",
       );
     }
   };

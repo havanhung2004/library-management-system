@@ -148,9 +148,9 @@ const AdminBooks: React.FC = () => {
     try {
       await api.delete(`/books/${id}`);
       fetchData();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error deleting book:", err);
-      alert("Không thể xóa sách này.");
+      alert(err.response?.data?.message || "Không thể xóa sách này.");
     }
   };
 
