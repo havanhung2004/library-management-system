@@ -40,13 +40,13 @@ const App: React.FC = () => {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/books/:bookId" element={<BookDetails />} />
-                <Route 
-                  path="/reader/:bookId" 
+                <Route
+                  path="/reader/:bookId"
                   element={
                     <ProtectedRoute>
                       <BookReader />
                     </ProtectedRoute>
-                  } 
+                  }
                 />
                 <Route
                   path="/profile"
@@ -105,4 +105,3 @@ const App: React.FC = () => {
 };
 
 export default App;
-

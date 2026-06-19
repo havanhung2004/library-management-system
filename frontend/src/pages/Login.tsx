@@ -89,7 +89,7 @@ const Login: React.FC = () => {
                 </label>
                 <Link
                   to="/forgot-password"
-                  name="forgot-password"
+                  id="forgot-password"
                   className="text-xs text-primary hover:text-primary-light transition-colors font-semibold"
                 >
                   Quên mật khẩu?
@@ -165,4 +165,3 @@ const Login: React.FC = () => {
 };
 
 export default Login;
-
