@@ -1,16 +1,14 @@
-FROM node:20-alpine
+FROM node:20
 
 WORKDIR /app
 
 COPY package*.json ./
 
 RUN npm install --include=dev
-RUN npm ls typescript
 
-RUN node_modules/.bin/tsc --version
-RUN npx tsc --version
 COPY . .
-RUN npx tsc
+
+RUN npm run build
 
 EXPOSE 5001
 
