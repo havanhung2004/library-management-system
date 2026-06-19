@@ -9,6 +9,7 @@ import {
   deleteFromCloudinary,
   uploadToCloudinary,
 } from "../../common/utils/cloudinary";
+import { Readable } from "stream";
 const createBook = catchAsync(async (req: Request, res: Response) => {
   const book = await bookService.createBook(req.body);
   res.status(201).send({
@@ -212,10 +213,12 @@ const getBookDocument = catchAsync(async (req: Request, res: Response) => {
   res.setHeader("X-Full-Access", fullAccess ? "true" : "false");
 
   res.setHeader("Content-Type", "application/pdf");
+
   console.log("User:", userId);
   console.log("Book:", bookId);
   console.log("Full Access:", fullAccess);
-  response.data.pipe(res);
+
+  (response.data as Readable).pipe(res);
 });
 export default {
   createBook,
