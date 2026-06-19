@@ -8,7 +8,7 @@
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "seed": "ts-node src/seeder_tool.ts",
     "clear": "ts-node src/clear_data.ts",
-    "build": "tsc",
+    "build": "./node_modules/.bin/tsc",
     "format": "prettier --write \"src/**/*.ts\"",
     "lint": "eslint \"src/**/*.ts\" --fix",
     "test": "jest"
