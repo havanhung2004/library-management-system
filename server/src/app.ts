@@ -26,6 +26,7 @@ app.use(
     origin: process.env.LINK_COR || "http://localhost:5173",
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+    exposedHeaders: ["X-Full-Access"],
   }),
 );
 
@@ -52,4 +53,3 @@ app.get("/api/v1/health", (req, res) => {
 app.use(errorHandler);
 
 export default app;
-

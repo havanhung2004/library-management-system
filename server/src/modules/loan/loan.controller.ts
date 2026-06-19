@@ -3,19 +3,21 @@ import { catchAsync } from "../../common/utils/catchAsync";
 import loanService from "./loan.service";
 
 const borrowBook = catchAsync(async (req: Request, res: Response) => {
-  const { copyId, bookId, durationDays } = req.body;
+  const { copyId, bookId, loanType, durationDays } = req.body;
+
   const loan = await loanService.borrowBook(req.user!._id, {
     copyId,
     bookId,
+    loanType,
     durationDays,
   });
+
   res.status(201).send({
     success: true,
     data: loan,
     message: "Book borrowed successfully",
   });
 });
-
 const returnBook = catchAsync(async (req: Request, res: Response) => {
   const loan = await loanService.returnBook(req.params.loanId, req.user);
   res.send({
@@ -50,8 +52,7 @@ const getAllLoans = catchAsync(async (req: Request, res: Response) => {
   else if (status === "Chờ duyệt") filter.status = "pending";
   else if (status === "Từ chối") filter.status = "rejected";
   else if (status === "Quá hạn") {
-    filter.status = "active";
-    filter.dueDate = { $lt: new Date() };
+    filter.status = "overdue";
   } else if (status && status !== "Tất cả") {
     filter.status = status;
   }
@@ -103,4 +104,3 @@ export default {
   approveLoan,
   rejectLoan,
 };
-

@@ -33,7 +33,12 @@ const AdminLoans: React.FC = () => {
       const response = await api.get("/loans", {
         params: {
           status: filterStatus !== "Tất cả" ? filterStatus : undefined,
-          type: filterFormat !== "Tất cả" ? (filterFormat === "Ebook" ? "ebook" : "physical") : undefined,
+          type:
+            filterFormat !== "Tất cả"
+              ? filterFormat === "Ebook"
+                ? "ebook"
+                : "physical"
+              : undefined,
           search: searchQuery || undefined,
           page: currentPage,
           limit: 10,
@@ -132,19 +137,19 @@ const AdminLoans: React.FC = () => {
               </div>
             </div>
             <div className="relative w-full md:w-80 group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface/50 group-focus-within:text-primary transition-colors" />
-            <input
-              type="text"
-              placeholder="Tìm theo tên, email, tiêu đề sách..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-background border border-on-surface/10 rounded-lg py-2.5 pl-11 pr-4 text-sm focus:outline-none focus:border-primary/50 transition-all text-on-surface"
-            />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface/50 group-focus-within:text-primary transition-colors" />
+              <input
+                type="text"
+                placeholder="Tìm theo tên, email, tiêu đề sách..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-background border border-on-surface/10 rounded-lg py-2.5 pl-11 pr-4 text-sm focus:outline-none focus:border-primary/50 transition-all text-on-surface"
+              />
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="overflow-x-auto">
+        <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
               <tr className="bg-on-surface/[0.02] text-on-surface/50 text-[10px] font-black uppercase tracking-widest border-b border-on-surface/5">
@@ -198,7 +203,13 @@ const AdminLoans: React.FC = () => {
                   const firstName = loan.userId?.profile?.firstName || "User";
                   const lastName = loan.userId?.profile?.lastName || "";
                   const bookTitle =
-                    loan.copyId?.bookId?.title || "Tài liệu không xác định";
+                    loan.loanType === "ebook"
+                      ? loan.bookId?.title
+                      : loan.copyId?.bookId?.title;
+                  const displayTitle = bookTitle || "Tài liệu không xác định";
+                  {
+                    displayTitle;
+                  }
                   const borrowDate = new Date(
                     loan.createdAt,
                   ).toLocaleDateString("vi-VN");
@@ -233,7 +244,7 @@ const AdminLoans: React.FC = () => {
                         </p>
                       </td>
                       <td className="px-6 py-4">
-                        {loan.copyId?.bookId?.documentUrl ? (
+                        {loan.loanType === "ebook" ? (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-black bg-indigo-500/10 text-indigo-500 border border-indigo-500/20 uppercase tracking-tighter">
                             EBOOK
                           </span>
@@ -262,13 +273,15 @@ const AdminLoans: React.FC = () => {
                           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-wider border ${
                             loan.status === "active"
                               ? "bg-blue-500/10 text-blue-500 border-blue-500/20"
-                              : loan.status === "returned"
-                                ? "bg-green-500/10 text-green-500 border-green-500/20"
-                                : loan.status === "pending"
-                                  ? "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
-                                  : loan.status === "rejected"
-                                    ? "bg-accent/10 text-accent border-accent/20"
-                                    : "bg-accent/10 text-accent border-accent/20"
+                              : loan.status === "overdue"
+                                ? "bg-red-500/10 text-red-500 border-red-500/20"
+                                : loan.status === "returned"
+                                  ? "bg-green-500/10 text-green-500 border-green-500/20"
+                                  : loan.status === "pending"
+                                    ? "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
+                                    : loan.status === "rejected"
+                                      ? "bg-accent/10 text-accent border-accent/20"
+                                      : "bg-accent/10 text-accent border-accent/20"
                           }`}
                         >
                           <div
@@ -284,13 +297,13 @@ const AdminLoans: React.FC = () => {
                           ></div>
                           {loan.status === "active"
                             ? "ĐANG MƯỢN"
-                            : loan.status === "returned"
-                              ? "ĐÃ TRẢ"
-                              : loan.status === "pending"
-                                ? "CHỜ DUYỆT"
-                                : loan.status === "rejected"
-                                  ? "ĐÃ TỪ CHỐI"
-                                  : "QUÁ HẠN"}
+                            : loan.status === "overdue"
+                              ? "QUÁ HẠN"
+                              : loan.status === "returned"
+                                ? "ĐÃ TRẢ"
+                                : loan.status === "pending"
+                                  ? "CHỜ DUYỆT"
+                                  : "ĐÃ TỪ CHỐI"}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right whitespace-nowrap">
@@ -311,15 +324,16 @@ const AdminLoans: React.FC = () => {
                               </button>
                             </>
                           )}
-                          {loan.status === "active" && (
-                            <button
-                              onClick={() => handleReturn(loan._id)}
-                              className="inline-flex items-center gap-2 px-4 py-1.5 bg-green-500/10 hover:bg-green-500 text-green-500 hover:text-white rounded-lg text-xs font-black transition-all shadow-sm shadow-green-500/10"
-                            >
-                              <CheckCircle className="w-3.5 h-3.5" /> XÁC NHẬN
-                              TRẢ
-                            </button>
-                          )}
+                          {loan.loanType === "physical" &&
+                            ["active", "overdue"].includes(loan.status) && (
+                              <button
+                                onClick={() => handleReturn(loan._id)}
+                                className="inline-flex items-center gap-2 px-4 py-1.5 bg-green-500/10 hover:bg-green-500 text-green-500 hover:text-white rounded-lg text-xs font-black transition-all shadow-sm shadow-green-500/10"
+                              >
+                                <CheckCircle className="w-3.5 h-3.5" />
+                                XÁC NHẬN TRẢ
+                              </button>
+                            )}
                           {(loan.status === "returned" ||
                             loan.status === "rejected") && (
                             <span className="text-[10px] font-black text-on-surface/30 uppercase tracking-widest">
@@ -355,4 +369,3 @@ const AdminLoans: React.FC = () => {
 };
 
 export default AdminLoans;
-

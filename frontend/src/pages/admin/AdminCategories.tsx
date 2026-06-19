@@ -79,9 +79,11 @@ const AdminCategories: React.FC = () => {
       }
       setShowModal(false);
       fetchCategories();
-    } catch (err) {
-      console.error("Error saving category:", err);
-      alert("Đã có lỗi xảy ra khi lưu danh mục.");
+    } catch (err: any) {
+      const message =
+        err.response?.data?.message || "Đã có lỗi xảy ra khi lưu danh mục.";
+
+      alert(message);
     }
   };
 
@@ -293,4 +295,3 @@ const AdminCategories: React.FC = () => {
 };
 
 export default AdminCategories;
-

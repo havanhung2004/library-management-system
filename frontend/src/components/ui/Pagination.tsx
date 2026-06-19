@@ -11,9 +11,8 @@ const Pagination: React.FC<PaginationProps> = ({ page, totalPages, onPageChange 
   if (totalPages <= 1) return null;
 
   const pages = [];
-  const delta = 1; // pages around current
+  const delta = 1; 
 
-  // Build page numbers with ellipsis
   for (let i = 1; i <= totalPages; i++) {
     if (
       i === 1 ||
@@ -22,7 +21,7 @@ const Pagination: React.FC<PaginationProps> = ({ page, totalPages, onPageChange 
     ) {
       pages.push(i);
     } else if (pages[pages.length - 1] !== -1) {
-      pages.push(-1); // ellipsis marker
+      pages.push(-1); 
     }
   }
 

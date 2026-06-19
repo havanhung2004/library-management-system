@@ -9,17 +9,72 @@ import fineService from "../fine/fine.service";
 
 const borrowBook = async (
   userId: Types.ObjectId,
-  options: { copyId?: string; bookId?: string; durationDays?: number },
+  options: {
+    copyId?: string;
+    bookId?: string;
+    loanType?: "ebook" | "physical";
+    durationDays?: number;
+  },
 ) => {
-  const { copyId, bookId, durationDays = 14 } = options;
+  const { copyId, bookId, loanType, durationDays = 14 } = options;
 
-  let copy;
-  if (copyId) {
+  let book: any = null;
+  let copy: any = null;
+
+  if (bookId) {
+    book = await Book.findById(bookId);
+  } else if (copyId) {
     copy = await Copy.findById(copyId).populate("bookId");
-  } else if (bookId) {
-    copy = await Copy.findOne({ bookId, status: "available" }).populate(
-      "bookId",
+    book = (copy as any)?.bookId;
+  }
+
+  if (!book) throw new ApiError(404, "Không tìm thấy sách");
+
+  const isEbook = loanType === "ebook";
+
+  if (isEbook) {
+    const existingLoan = await Loan.findOne({
+      userId,
+      bookId: book._id,
+      status: { $in: ["pending", "active", "overdue"] },
+    });
+    if (existingLoan) {
+      throw new ApiError(400, "Bạn đã có yêu cầu mượn eBook này rồi");
+    }
+
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + durationDays);
+
+    const loan = await Loan.create({
+      userId,
+      bookId: book._id,
+      copyId: null,
+      dueDate,
+      status: "pending",
+      loanType: "ebook",
+    });
+
+    const user = await User.findById(userId);
+    const userName = user?.profile?.firstName
+      ? `${user.profile.firstName} ${user.profile.lastName}`
+      : "Một sinh viên";
+
+    await notificationService.createNotification(
+      userId.toString(),
+      `${userName} đã đăng ký đọc eBook "${book.title}"`,
+      "LOAN_REQUEST",
     );
+
+    return loan;
+  }
+
+  if (copyId && !copy) {
+    copy = await Copy.findById(copyId).populate("bookId");
+  } else if (!copy) {
+    copy = await Copy.findOne({
+      bookId: book._id,
+      status: "available",
+    }).populate("bookId");
   }
 
   if (!copy || copy.status !== "available") {
@@ -27,21 +82,21 @@ const borrowBook = async (
   }
 
   const user = await User.findById(userId);
-
   const dueDate = new Date();
   dueDate.setDate(dueDate.getDate() + durationDays);
 
   const loan = await Loan.create({
     userId,
     copyId: copy._id,
+    bookId: null,
     dueDate,
     status: "pending",
+    loanType: "physical",
   });
 
   copy.status = "reserved";
   await copy.save();
 
-  // Create notification for Admin
   const bookTitle = (copy.bookId as any)?.title || "một cuốn sách";
   const userName = user?.profile?.firstName
     ? `${user.profile.firstName} ${user.profile.lastName}`
@@ -65,18 +120,21 @@ const returnBook = async (loanId: string, user?: any) => {
   if (!loan || loan.status === "returned") {
     throw new ApiError(400, "Invalid loan record");
   }
-
-  // If a user is provided and is not an admin/librarian, enforce restrictions
   if (user && !["superadmin", "admin", "librarian"].includes(user.role)) {
-    // Check if the loan belongs to the user
     if (loan.userId.toString() !== user._id.toString()) {
-      throw new ApiError(403, "Bạn không có quyền thực hiện thao tác này trên lượt mượn của người khác.");
+      throw new ApiError(
+        403,
+        "Bạn không có quyền thực hiện thao tác này trên lượt mượn của người khác.",
+      );
     }
 
     // Check if the book is an ebook
     const book = (loan.copyId as any)?.bookId;
-    if (!book || !book.documentUrl) {
-      throw new ApiError(403, "Chỉ nhân viên thư viện mới có quyền xác nhận trả sách vật lý sau khi kiểm tra tình trạng.");
+    if (loan.loanType !== "ebook") {
+      throw new ApiError(
+        403,
+        "Chỉ nhân viên thư viện mới có quyền xác nhận trả sách vật lý sau khi kiểm tra tình trạng.",
+      );
     }
   }
 
@@ -110,20 +168,31 @@ const returnBook = async (loanId: string, user?: any) => {
     );
   }
 
-  const copy = await Copy.findById(loan.copyId);
-  if (copy) {
-    copy.status = "available";
-    await copy.save();
-  }
+  if (loan.loanType === "physical") {
+    const copy = await Copy.findById(loan.copyId);
 
+    if (copy) {
+      copy.status = "available";
+      await copy.save();
+    }
+  }
   return loan;
 };
 
 const getLoansByUser = async (userId: Types.ObjectId) => {
-  return Loan.find({ userId }).populate({
-    path: "copyId",
-    populate: { path: "bookId", select: "title author coverImage documentUrl" },
-  });
+  return Loan.find({ userId })
+    .sort({ createdAt: -1 })
+    .populate({
+      path: "copyId",
+      populate: {
+        path: "bookId",
+        select: "title author coverImage documentUrl",
+      },
+    })
+    .populate({
+      path: "bookId",
+      select: "title author coverImage documentUrl",
+    });
 };
 
 const queryLoans = async (filter: any, options: any) => {
@@ -166,18 +235,20 @@ const queryLoans = async (filter: any, options: any) => {
   const { type } = options;
   if (type) {
     const bookFilter: any = {};
-    if (type === 'ebook') {
+    if (type === "ebook") {
       bookFilter.documentUrl = { $exists: true, $ne: "" };
-    } else if (type === 'physical') {
+    } else if (type === "physical") {
       bookFilter.documentUrl = { $exists: false };
     }
 
     if (Object.keys(bookFilter).length > 0) {
       const books = await Book.find(bookFilter).select("_id");
       const bookIds = books.map((b) => b._id);
-      const copies = await Copy.find({ bookId: { $in: bookIds } }).select("_id");
+      const copies = await Copy.find({ bookId: { $in: bookIds } }).select(
+        "_id",
+      );
       const copyIds = copies.map((c) => c._id);
-      
+
       finalFilter.copyId = { ...(finalFilter.copyId || {}), $in: copyIds };
     }
   }
@@ -193,7 +264,14 @@ const queryLoans = async (filter: any, options: any) => {
     .populate("userId", "profile.firstName profile.lastName email")
     .populate({
       path: "copyId",
-      populate: { path: "bookId", select: "title author coverImage documentUrl" },
+      populate: {
+        path: "bookId",
+        select: "title author coverImage documentUrl",
+      },
+    })
+    .populate({
+      path: "bookId",
+      select: "title author coverImage documentUrl",
     });
 
   const totalResults = await Loan.countDocuments(finalFilter);
@@ -213,7 +291,14 @@ const getAllLoans = async () => {
     .populate("userId", "profile.firstName profile.lastName email")
     .populate({
       path: "copyId",
-      populate: { path: "bookId", select: "title author documentUrl" },
+      populate: {
+        path: "bookId",
+        select: "title author documentUrl",
+      },
+    })
+    .populate({
+      path: "bookId",
+      select: "title author documentUrl",
     })
     .sort({ createdAt: -1 });
 };
@@ -224,7 +309,7 @@ const approveLoan = async (loanId: string) => {
     throw new ApiError(400, "Yêu cầu không hợp lệ hoặc đã được xử lý");
   }
 
-  const durationDays = 14; // Default or extract from original loan if saved
+  const durationDays = 14;
   const borrowDate = new Date();
   const dueDate = new Date();
   dueDate.setDate(dueDate.getDate() + durationDays);
@@ -234,10 +319,13 @@ const approveLoan = async (loanId: string) => {
   loan.dueDate = dueDate;
   await loan.save();
 
-  const copy = await Copy.findById(loan.copyId);
-  if (copy) {
-    copy.status = "borrowed";
-    await copy.save();
+  if (loan.loanType === "physical") {
+    const copy = await Copy.findById(loan.copyId);
+
+    if (copy) {
+      copy.status = "borrowed";
+      await copy.save();
+    }
   }
 
   // Notify user
@@ -259,10 +347,13 @@ const rejectLoan = async (loanId: string) => {
   loan.status = "rejected";
   await loan.save();
 
-  const copy = await Copy.findById(loan.copyId);
-  if (copy) {
-    copy.status = "available";
-    await copy.save();
+  if (loan.loanType === "physical") {
+    const copy = await Copy.findById(loan.copyId);
+
+    if (copy) {
+      copy.status = "available";
+      await copy.save();
+    }
   }
 
   // Notify user
@@ -275,17 +366,43 @@ const rejectLoan = async (loanId: string) => {
   return loan;
 };
 
-const hasActiveLoan = async (userId: Types.ObjectId | string, bookId: string) => {
+const hasActiveLoan = async (
+  userId: Types.ObjectId | string,
+  bookId: string,
+) => {
+  const ebookLoan = await Loan.findOne({
+    userId,
+    bookId,
+    loanType: "ebook",
+    status: { $in: ["active", "overdue"] },
+  });
+
+  if (ebookLoan) return true;
+
   const copies = await Copy.find({ bookId }).select("_id");
   const copyIds = copies.map((c) => c._id);
-  const loan = await Loan.findOne({
+
+  const physicalLoan = await Loan.findOne({
     userId,
     copyId: { $in: copyIds },
     status: { $in: ["active", "overdue"] },
   });
-  return !!loan;
-};
 
+  return !!physicalLoan;
+};
+const hasActiveEbookLoan = async (
+  userId: Types.ObjectId | string,
+  bookId: string,
+) => {
+  const ebookLoan = await Loan.findOne({
+    userId,
+    bookId,
+    loanType: "ebook",
+    status: { $in: ["active", "overdue", "renewed"] },
+  });
+
+  return !!ebookLoan;
+};
 export default {
   borrowBook,
   approveLoan,
@@ -295,5 +412,5 @@ export default {
   getAllLoans,
   queryLoans,
   hasActiveLoan,
+  hasActiveEbookLoan,
 };
-

@@ -1,28 +1,36 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, X, Send, Sparkles, Bot, User, Minimize2 } from 'lucide-react';
-import api from '../../lib/api';
-import { useAuth } from '../../contexts/AuthContext';
+import React, { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  MessageSquare,
+  X,
+  Send,
+  Sparkles,
+  Bot,
+  User,
+  Minimize2,
+} from "lucide-react";
+import api from "../../lib/api";
+import { useAuth } from "../../contexts/AuthContext";
 
 interface Message {
-  role: 'user' | 'model';
+  role: "user" | "model";
   parts: [{ text: string }];
 }
 
 const SUGGESTIONS = [
-  'Quy định mượn sách?',
-  'Gợi ý sách triết học',
-  'Cách tìm tài liệu?',
-  'Thư viện mở cửa khi nào?',
+  "Quy định mượn sách?",
+  "Gợi ý sách triết học",
+  "Cách tìm tài liệu?",
+  "Thư viện mở cửa khi nào?",
 ];
 
 /** Render basic markdown: **bold**, *italic*, bullet lists */
 const renderMarkdown = (text: string) => {
-  const lines = text.split('\n');
+  const lines = text.split("\n");
   return lines.map((line, i) => {
     // bullet list
     if (line.match(/^[\*\-]\s/)) {
-      const content = line.replace(/^[\*\-]\s/, '');
+      const content = line.replace(/^[\*\-]\s/, "");
       return (
         <li key={i} className="ml-4 list-disc">
           {renderInline(content)}
@@ -31,7 +39,7 @@ const renderMarkdown = (text: string) => {
     }
     // numbered list
     if (line.match(/^\d+\.\s/)) {
-      const content = line.replace(/^\d+\.\s/, '');
+      const content = line.replace(/^\d+\.\s/, "");
       return (
         <li key={i} className="ml-4 list-decimal">
           {renderInline(content)}
@@ -39,7 +47,7 @@ const renderMarkdown = (text: string) => {
       );
     }
     // empty line → spacer
-    if (line.trim() === '') return <br key={i} />;
+    if (line.trim() === "") return <br key={i} />;
     return <p key={i}>{renderInline(line)}</p>;
   });
 };
@@ -48,10 +56,10 @@ const renderInline = (text: string) => {
   // **bold**
   const parts = text.split(/(\*\*.*?\*\*|\*.*?\*)/g);
   return parts.map((part, i) => {
-    if (part.startsWith('**') && part.endsWith('**')) {
+    if (part.startsWith("**") && part.endsWith("**")) {
       return <strong key={i}>{part.slice(2, -2)}</strong>;
     }
-    if (part.startsWith('*') && part.endsWith('*')) {
+    if (part.startsWith("*") && part.endsWith("*")) {
       return <em key={i}>{part.slice(1, -1)}</em>;
     }
     return <span key={i}>{part}</span>;
@@ -61,12 +69,17 @@ const renderInline = (text: string) => {
 const Chatbot: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const chatRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
-
+  useEffect(() => {
+    setMessages([]);
+    setInput("");
+    setLoading(false);
+    setIsOpen(false);
+  }, [user?._id]);
   useEffect(() => {
     if (chatRef.current) {
       chatRef.current.scrollTop = chatRef.current.scrollHeight;
@@ -81,33 +94,55 @@ const Chatbot: React.FC = () => {
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || loading) return;
-    const userMessage: Message = { role: 'user', parts: [{ text }] };
+    const userMessage: Message = { role: "user", parts: [{ text }] };
     setMessages((prev) => [...prev, userMessage]);
-    setInput('');
+    setInput("");
     setLoading(true);
 
     try {
-      const response = await api.post('/ai/chat', {
-        message: text,
-        history: messages,
-      });
+      let response;
+      const lowerText = text.toLowerCase();
+
+      const isRecommendationQuestion =
+        lowerText.includes("gợi ý") ||
+        lowerText.includes("đề xuất") ||
+        lowerText.includes("sách phù hợp") ||
+        lowerText.includes("recommend");
+
+      if (isRecommendationQuestion) {
+        response = await api.get("/ai/recommendations");
+      } else {
+        response = await api.post("/ai/chat", {
+          message: text,
+          history: messages,
+        });
+      }
 
       const botMessage: Message = {
-        role: 'model',
+        role: "model",
         parts: [{ text: response.data.data }],
       };
       setMessages((prev) => [...prev, botMessage]);
     } catch (err: any) {
+      console.error("AI Error:", err);
+      console.error("Response:", err?.response?.data);
+
       const isAuth = err?.response?.status === 401;
+
+      const errorMessage =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        "Xin lỗi, tôi gặp chút trục trặc. Bạn thử lại nhé!";
+
       setMessages((prev) => [
         ...prev,
         {
-          role: 'model',
+          role: "model",
           parts: [
             {
               text: isAuth
-                ? 'Bạn cần **đăng nhập** để sử dụng tính năng AI Assistant.'
-                : 'Xin lỗi, tôi gặp chút trục trặc. Bạn thử lại nhé!',
+                ? "Bạn cần **đăng nhập** để sử dụng tính năng AI Assistant."
+                : errorMessage,
             },
           ],
         },
@@ -138,14 +173,18 @@ const Chatbot: React.FC = () => {
             <div className="p-5 bg-gradient-to-r from-primary to-secondary flex items-center justify-between flex-shrink-0 relative overflow-hidden">
               {/* Shine effect for header */}
               <div className="absolute inset-0 bg-white/10 skew-x-12 translate-x-1/2 -z-0" />
-              
+
               <div className="flex items-center gap-3 relative z-10">
                 <div className="bg-white/20 p-2 rounded-xl backdrop-blur-md">
                   <Sparkles className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-white text-base leading-none">AI Assistant</h3>
-                  <p className="text-white/70 text-[11px] mt-0.5">HNUE Digital Library</p>
+                  <h3 className="font-bold text-white text-base leading-none">
+                    AI Assistant
+                  </h3>
+                  <p className="text-white/70 text-[11px] mt-0.5">
+                    HNUE Digital Library
+                  </p>
                 </div>
               </div>
               <button
@@ -157,17 +196,21 @@ const Chatbot: React.FC = () => {
             </div>
 
             {/* Messages */}
-            <div ref={chatRef} className="flex-1 p-4 overflow-y-auto space-y-4 scrollbar-hide">
+            <div
+              ref={chatRef}
+              className="flex-1 p-4 overflow-y-auto space-y-4 scrollbar-hide"
+            >
               {messages.length === 0 && (
                 <div className="text-center py-8">
                   <div className="inline-block p-4 rounded-full bg-on-surface/5 mb-3">
                     <Bot className="w-8 h-8 text-primary opacity-50" />
                   </div>
                   <h4 className="font-bold text-base mb-1 text-on-background">
-                    Chào {user?.profile?.firstName || 'bạn'}! 👋
+                    Chào {user?.profile?.lastName || "bạn"}! 👋
                   </h4>
                   <p className="text-on-surface/60 text-sm mb-6">
-                    Tôi có thể giúp bạn tìm sách, giải đáp quy định mượn/trả hoặc gợi ý tài liệu học tập.
+                    Tôi có thể giúp bạn tìm sách, giải đáp quy định mượn/trả
+                    hoặc gợi ý tài liệu học tập.
                   </p>
                   {/* Quick suggestions */}
                   <div className="flex flex-wrap justify-center gap-2">
@@ -189,14 +232,16 @@ const Chatbot: React.FC = () => {
                   key={i}
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`flex gap-2.5 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
+                  className={`flex gap-2.5 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
                 >
                   <div
                     className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-1 shadow-sm ${
-                      msg.role === 'user' ? 'bg-secondary text-white' : 'bg-gradient-to-br from-primary to-secondary text-white'
+                      msg.role === "user"
+                        ? "bg-secondary text-white"
+                        : "bg-gradient-to-br from-primary to-secondary text-white"
                     }`}
                   >
-                    {msg.role === 'user' ? (
+                    {msg.role === "user" ? (
                       <User className="w-3.5 h-3.5" />
                     ) : (
                       <Bot className="w-3.5 h-3.5" />
@@ -204,9 +249,9 @@ const Chatbot: React.FC = () => {
                   </div>
                   <div
                     className={`max-w-[80%] p-3.5 rounded-2xl text-sm leading-relaxed space-y-1 shadow-sm ${
-                      msg.role === 'user'
-                        ? 'bg-secondary text-white rounded-tr-none'
-                        : 'bg-on-surface/5 text-on-surface rounded-tl-none border border-on-surface/5'
+                      msg.role === "user"
+                        ? "bg-secondary text-white rounded-tr-none"
+                        : "bg-on-surface/5 text-on-surface rounded-tl-none border border-on-surface/5"
                     }`}
                   >
                     {renderMarkdown(msg.parts[0].text)}
@@ -221,15 +266,24 @@ const Chatbot: React.FC = () => {
                   </div>
                   <div className="bg-on-surface/5 px-4 py-3 rounded-2xl rounded-tl-none flex gap-1 items-center border border-on-surface/5">
                     <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" />
-                    <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.15s' }} />
-                    <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.3s' }} />
+                    <span
+                      className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce"
+                      style={{ animationDelay: "0.15s" }}
+                    />
+                    <span
+                      className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce"
+                      style={{ animationDelay: "0.3s" }}
+                    />
                   </div>
                 </div>
               )}
             </div>
 
             {/* Input */}
-            <form onSubmit={handleSubmit} className="p-4 bg-on-surface/5 border-t border-on-surface/5 flex gap-2 flex-shrink-0">
+            <form
+              onSubmit={handleSubmit}
+              className="p-4 bg-on-surface/5 border-t border-on-surface/5 flex gap-2 flex-shrink-0"
+            >
               <input
                 ref={inputRef}
                 type="text"
@@ -260,11 +314,23 @@ const Chatbot: React.FC = () => {
         <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
         <AnimatePresence mode="wait">
           {isOpen ? (
-            <motion.div key="x" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.15 }}>
+            <motion.div
+              key="x"
+              initial={{ rotate: -90, opacity: 0 }}
+              animate={{ rotate: 0, opacity: 1 }}
+              exit={{ rotate: 90, opacity: 0 }}
+              transition={{ duration: 0.15 }}
+            >
               <X className="relative z-10 w-6 h-6" />
             </motion.div>
           ) : (
-            <motion.div key="msg" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.15 }}>
+            <motion.div
+              key="msg"
+              initial={{ rotate: 90, opacity: 0 }}
+              animate={{ rotate: 0, opacity: 1 }}
+              exit={{ rotate: -90, opacity: 0 }}
+              transition={{ duration: 0.15 }}
+            >
               <MessageSquare className="relative z-10 w-6 h-6" />
             </motion.div>
           )}

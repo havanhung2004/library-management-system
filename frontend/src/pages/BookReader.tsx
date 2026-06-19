@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Document, Page, pdfjs } from "react-pdf";
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  ZoomIn, 
-  ZoomOut, 
+import {
+  ChevronLeft,
+  ChevronRight,
+  ZoomIn,
+  ZoomOut,
   X,
   Loader2,
-  AlertCircle
+  AlertCircle,
 } from "lucide-react";
 import api from "../lib/api";
 
@@ -18,24 +18,31 @@ pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.vers
 const BookReader: React.FC = () => {
   const { bookId } = useParams<{ bookId: string }>();
   const navigate = useNavigate();
+  const [fullAccess, setFullAccess] = useState(false);
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [scale, setScale] = useState<number>(1.0);
   const [documentUrl, setDocumentUrl] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>("");
-
+  const maxPages = fullAccess ? numPages : Math.min(numPages, 3);
   useEffect(() => {
     let blobUrl = "";
     const fetchDoc = async () => {
       setLoading(true);
       try {
-        // Fetch as blob via our backend proxy to avoid CORS and hide source URL
         const response = await api.get(`/books/${bookId}/document`, {
           responseType: "blob",
         });
+        console.log("Headers:", response.headers);
+        console.log("X-Full-Access:", response.headers["x-full-access"]);
+
+        setFullAccess(response.headers["x-full-access"] === "true");
         blobUrl = URL.createObjectURL(response.data);
+
         setDocumentUrl(blobUrl);
+
+        setFullAccess(response.headers["x-full-access"] === "true");
       } catch (err: any) {
         setError(
           err.response?.data?.message ||
@@ -47,15 +54,15 @@ const BookReader: React.FC = () => {
     };
     fetchDoc();
 
-    // Protection: Disable right click
     const handleContextMenu = (e: MouseEvent) => e.preventDefault();
     document.addEventListener("contextmenu", handleContextMenu);
 
-    // Protection: Disable print/save shortcuts
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && (e.key === "p" || e.key === "s")) {
         e.preventDefault();
-        alert("Tính năng tải về và in ấn bị tắt để bảo vệ bản quyền tài liệu số.");
+        alert(
+          "Tính năng tải về và in ấn bị tắt để bảo vệ bản quyền tài liệu số.",
+        );
       }
     };
     document.addEventListener("keydown", handleKeyDown);
@@ -63,7 +70,7 @@ const BookReader: React.FC = () => {
     return () => {
       document.removeEventListener("contextmenu", handleContextMenu);
       document.removeEventListener("keydown", handleKeyDown);
-      // Clean up the blob URL to free memory
+
       if (blobUrl) URL.revokeObjectURL(blobUrl);
     };
   }, [bookId]);
@@ -72,13 +79,16 @@ const BookReader: React.FC = () => {
     setNumPages(numPages);
     setPageNumber(1);
   }
-
   if (loading) {
     return (
       <div className="fixed inset-0 bg-[#0f172a] flex flex-col items-center justify-center text-white z-[9999]">
         <Loader2 className="w-12 h-12 animate-spin text-primary mb-6" />
-        <p className="text-xl font-bold tracking-tight">Đang chuẩn bị tài liệu bảo mật...</p>
-        <p className="text-slate-400 mt-2 text-sm">Vui lòng không tắt trình duyệt</p>
+        <p className="text-xl font-bold tracking-tight">
+          Đang chuẩn bị tài liệu bảo mật...
+        </p>
+        <p className="text-slate-400 mt-2 text-sm">
+          Vui lòng không tắt trình duyệt
+        </p>
       </div>
     );
   }
@@ -89,9 +99,11 @@ const BookReader: React.FC = () => {
         <div className="bg-red-500/10 p-6 rounded-3xl mb-8">
           <AlertCircle className="w-16 h-16 text-red-500" />
         </div>
-        <h2 className="text-3xl font-bold mb-4 tracking-tight">Lỗi truy cập tài liệu</h2>
+        <h2 className="text-3xl font-bold mb-4 tracking-tight">
+          Lỗi truy cập tài liệu
+        </h2>
         <p className="text-slate-400 mb-10 max-w-md leading-relaxed">{error}</p>
-        <button 
+        <button
           onClick={() => navigate(-1)}
           className="px-10 py-4 bg-primary text-white rounded-2xl font-bold hover:scale-105 transition-all shadow-xl shadow-primary/20"
         >
@@ -106,7 +118,7 @@ const BookReader: React.FC = () => {
       {/* Immersive Header */}
       <div className="h-20 bg-slate-900/50 backdrop-blur-xl border-b border-white/5 flex items-center justify-between px-8">
         <div className="flex items-center gap-6">
-          <button 
+          <button
             onClick={() => navigate(-1)}
             className="group flex items-center gap-2 px-4 py-2 hover:bg-white/5 rounded-xl transition-all text-slate-400 hover:text-white"
           >
@@ -115,15 +127,19 @@ const BookReader: React.FC = () => {
           </button>
           <div className="h-8 w-[1px] bg-white/10"></div>
           <div>
-            <span className="text-xs font-black uppercase tracking-[0.2em] text-primary block mb-0.5">Digital Library</span>
-            <span className="text-sm font-bold text-slate-200">Chế độ đọc bảo mật</span>
+            <span className="text-xs font-black uppercase tracking-[0.2em] text-primary block mb-0.5">
+              Digital Library
+            </span>
+            <span className="text-sm font-bold text-slate-200">
+              {fullAccess ? "Đọc toàn bộ tài liệu" : "Xem trước 3 trang đầu"}
+            </span>
           </div>
         </div>
 
         <div className="flex items-center gap-8">
           {/* Pagination */}
           <div className="flex items-center gap-3 bg-white/5 p-1 rounded-2xl border border-white/5 shadow-inner">
-            <button 
+            <button
               onClick={() => setPageNumber(Math.max(1, pageNumber - 1))}
               disabled={pageNumber <= 1}
               className="p-2 hover:bg-white/10 rounded-xl disabled:opacity-20 transition-all"
@@ -131,13 +147,13 @@ const BookReader: React.FC = () => {
               <ChevronLeft className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-2 px-3 font-mono">
-                <span className="text-primary font-bold">{pageNumber}</span>
-                <span className="opacity-30">/</span>
-                <span className="opacity-60">{numPages}</span>
+              <span className="text-primary font-bold">{pageNumber}</span>
+              <span className="opacity-30">/</span>
+              <span className="opacity-60">{maxPages}</span>
             </div>
-            <button 
-              onClick={() => setPageNumber(Math.min(numPages, pageNumber + 1))}
-              disabled={pageNumber >= numPages}
+            <button
+              onClick={() => setPageNumber(Math.min(maxPages, pageNumber + 1))}
+              disabled={pageNumber >= maxPages}
               className="p-2 hover:bg-white/10 rounded-xl disabled:opacity-20 transition-all"
             >
               <ChevronRight className="w-5 h-5" />
@@ -146,8 +162,8 @@ const BookReader: React.FC = () => {
 
           {/* Zoom */}
           <div className="flex items-center gap-3 bg-white/5 p-1 rounded-2xl border border-white/5 shadow-inner">
-            <button 
-              onClick={() => setScale(s => Math.max(0.5, s - 0.2))} 
+            <button
+              onClick={() => setScale((s) => Math.max(0.5, s - 0.2))}
               className="p-2 hover:bg-white/10 rounded-xl transition-all"
             >
               <ZoomOut className="w-5 h-5" />
@@ -155,8 +171,8 @@ const BookReader: React.FC = () => {
             <span className="text-xs font-bold w-12 text-center text-slate-300">
               {Math.round(scale * 100)}%
             </span>
-            <button 
-              onClick={() => setScale(s => Math.min(2.5, s + 0.2))} 
+            <button
+              onClick={() => setScale((s) => Math.min(2.5, s + 0.2))}
               className="p-2 hover:bg-white/10 rounded-xl transition-all"
             >
               <ZoomIn className="w-5 h-5" />
@@ -165,50 +181,69 @@ const BookReader: React.FC = () => {
         </div>
 
         <div className="hidden lg:flex items-center gap-3">
-            <div className="px-4 py-2 bg-yellow-500/10 border border-yellow-500/20 rounded-xl text-yellow-500 text-[10px] font-black uppercase tracking-widest">
-                Tài liệu được bảo vệ
-            </div>
+          <div className="px-4 py-2 bg-yellow-500/10 border border-yellow-500/20 rounded-xl text-yellow-500 text-[10px] font-black uppercase tracking-widest">
+            Tài liệu được bảo vệ
+          </div>
         </div>
       </div>
 
       {/* Main Content Viewer */}
       <div className="flex-1 overflow-auto p-12 flex justify-center scroll-smooth bg-[#020617]">
         <div className="relative">
-            {/* Background glowing effects for premium feel */}
-            <div className="absolute inset-0 bg-primary/20 blur-[150px] -z-10 rounded-full scale-150 opacity-20"></div>
-            
-            <div className="shadow-[0_40px_100px_-20px_rgba(0,0,0,0.8)] rounded-xl overflow-hidden bg-slate-800">
-              <Document
-                file={documentUrl}
-                onLoadSuccess={onDocumentLoadSuccess}
+          {/* Background glowing effects for premium feel */}
+          <div className="absolute inset-0 bg-primary/20 blur-[150px] -z-10 rounded-full scale-150 opacity-20"></div>
+
+          <div className="shadow-[0_40px_100px_-20px_rgba(0,0,0,0.8)] rounded-xl overflow-hidden bg-slate-800">
+            <Document
+              file={documentUrl}
+              onLoadSuccess={onDocumentLoadSuccess}
+              loading={
+                <div className="w-[600px] h-[800px] flex flex-col items-center justify-center gap-4">
+                  <Loader2 className="w-10 h-10 animate-spin text-primary" />
+                  <span className="text-sm font-bold opacity-40">
+                    Đang tải trang...
+                  </span>
+                </div>
+              }
+            >
+              <Page
+                pageNumber={pageNumber}
+                scale={scale}
+                renderAnnotationLayer={false}
+                renderTextLayer={false}
                 loading={
-                  <div className="w-[600px] h-[800px] flex flex-col items-center justify-center gap-4">
+                  <div className="w-full h-full flex items-center justify-center bg-slate-800">
                     <Loader2 className="w-10 h-10 animate-spin text-primary" />
-                    <span className="text-sm font-bold opacity-40">Đang tải trang...</span>
                   </div>
                 }
-              >
-                <Page 
-                  pageNumber={pageNumber} 
-                  scale={scale} 
-                  renderAnnotationLayer={false}
-                  renderTextLayer={false}
-                  loading={
-                    <div className="w-full h-full flex items-center justify-center bg-slate-800">
-                      <Loader2 className="w-10 h-10 animate-spin text-primary" />
-                    </div>
-                  }
-                />
-              </Document>
-            </div>
+              />
+            </Document>
+          </div>
         </div>
       </div>
+      {!fullAccess && pageNumber === maxPages && (
+        <div className="fixed bottom-10 right-10 z-50 bg-slate-900 border border-primary/30 p-6 rounded-3xl shadow-2xl">
+          <h3 className="font-bold text-lg text-primary">
+            Đã hết bản xem trước
+          </h3>
 
+          <p className="text-slate-400 mt-2">
+            Mượn sách để tiếp tục đọc toàn bộ tài liệu.
+          </p>
+
+          <button
+            onClick={() => navigate(`/books/${bookId}`)}
+            className="mt-4 px-5 py-3 bg-primary rounded-xl font-bold"
+          >
+            📚 Mượn sách ngay
+          </button>
+        </div>
+      )}
       {/* Footer Info */}
       <div className="h-10 bg-black/40 backdrop-blur-md border-t border-white/5 flex items-center justify-center px-8">
-          <p className="text-[9px] font-black uppercase tracking-[0.3em] text-white/20">
-            Trình xem tài liệu số bảo mật - © 2026 HNUE Digital Library
-          </p>
+        <p className="text-[9px] font-black uppercase tracking-[0.3em] text-white/20">
+          Trình xem tài liệu số bảo mật - © 2026 HNUE Digital Library
+        </p>
       </div>
     </div>
   );

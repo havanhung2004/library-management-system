@@ -11,7 +11,7 @@ const ProjectGuide: React.FC = () => {
     {
       title: "Hệ thống AI Thông minh (RAG Chatbot)",
       icon: <Bot className="w-8 h-8 text-primary" />,
-      description: "Tích hợp mô hình Gemini 2.5 Flash tiên tiến để hỗ trợ người dùng.",
+      description: "Tích hợp mô hình Gemini 3.5 Flash tiên tiến để hỗ trợ người dùng.",
       details: [
         "Cơ chế RAG (Retrieval-Augmented Generation) truy vấn dữ liệu thực tế từ MongoDB trước khi trả lời.",
         "Xử lý ngôn ngữ tự nhiên để hiểu các yêu cầu mượn trả phức tạp.",

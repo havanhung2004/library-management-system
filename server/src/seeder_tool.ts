@@ -11,7 +11,8 @@ import { logger } from "./common/utils/logger";
 
 dotenv.config();
 
-const MONGO_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/digital-library";
+const MONGO_URI =
+  process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/hnue-digital-library";
 
 const bookImages = [
   "https://images.unsplash.com/photo-1544640808-32ca72ac7f67?w=500&q=80",
@@ -30,22 +31,55 @@ const samplePdfs = [
 ];
 
 const bookTitles = [
-  "Bắt trẻ đồng xanh", "Nhà giả kim", "1984", "Giết con chim nhại", "Kiêu hãnh và định kiến",
-  "Trăm năm cô đơn", "Thái tử nhỏ", "Đại Gatsby", "Chúa tể những chiếc nhẫn", "Harry Potter",
-  "Suối nguồn", "Tội ác và hình phạt", "Anh em nhà Karamazov", "Chiến tranh và hòa bình",
-  "Ulysses", "Moby-Dick", "Don Quixote", "Hamlet", "Odyssey", "Thần khúc"
+  "Bắt trẻ đồng xanh",
+  "Nhà giả kim",
+  "1984",
+  "Giết con chim nhại",
+  "Kiêu hãnh và định kiến",
+  "Trăm năm cô đơn",
+  "Thái tử nhỏ",
+  "Đại Gatsby",
+  "Chúa tể những chiếc nhẫn",
+  "Harry Potter",
+  "Suối nguồn",
+  "Tội ác và hình phạt",
+  "Anh em nhà Karamazov",
+  "Chiến tranh và hòa bình",
+  "Ulysses",
+  "Moby-Dick",
+  "Don Quixote",
+  "Hamlet",
+  "Odyssey",
+  "Thần khúc",
 ];
 
 const authors = [
-  "J.D. Salinger", "Paulo Coelho", "George Orwell", "Harper Lee", "Jane Austen",
-  "Gabriel García Márquez", "Antoine de Saint-Exupéry", "F. Scott Fitzgerald",
-  "J.R.R. Tolkien", "J.K. Rowling", "Ayn Rand", "Fyodor Dostoevsky", "Leo Tolstoy"
+  "J.D. Salinger",
+  "Paulo Coelho",
+  "George Orwell",
+  "Harper Lee",
+  "Jane Austen",
+  "Gabriel García Márquez",
+  "Antoine de Saint-Exupéry",
+  "F. Scott Fitzgerald",
+  "J.R.R. Tolkien",
+  "J.K. Rowling",
+  "Ayn Rand",
+  "Fyodor Dostoevsky",
+  "Leo Tolstoy",
 ];
 
 const departments = [
-  "Khoa Công nghệ thông tin", "Khoa Toán - Tin", "Khoa Vật lý", "Khoa Hóa học",
-  "Khoa Ngữ văn", "Khoa Lịch sử", "Khoa Địa lý", "Khoa Giáo dục tiểu học",
-  "Khoa Tâm lý giáo dục", "Khoa Tiếng Anh"
+  "Khoa Công nghệ thông tin",
+  "Khoa Toán - Tin",
+  "Khoa Vật lý",
+  "Khoa Hóa học",
+  "Khoa Ngữ văn",
+  "Khoa Lịch sử",
+  "Khoa Địa lý",
+  "Khoa Giáo dục tiểu học",
+  "Khoa Tâm lý giáo dục",
+  "Khoa Tiếng Anh",
 ];
 
 const clearAndSeedData = async () => {
@@ -61,7 +95,7 @@ const clearAndSeedData = async () => {
       Copy.deleteMany({}),
       Loan.deleteMany({}),
       Fine.deleteMany({}),
-      Notification.deleteMany({})
+      Notification.deleteMany({}),
     ]);
     logger.info("Cleared all data from database");
 
@@ -96,13 +130,33 @@ const clearAndSeedData = async () => {
 
     // 3. Seed 20 Categories
     const categoryNames = [
-      "Giáo dục", "Toán học", "CNTT", "Văn học", "Khoa học", "Triết học", "Lịch sử", "Địa lý", 
-      "Kinh tế", "Nghệ thuật", "Y học", "Ngoại ngữ", "Kỹ năng mềm", "Tâm lý học", "Tôn giáo", 
-      "Chính trị", "Pháp luật", "Thể thao", "Nấu ăn", "Du lịch"
+      "Giáo dục",
+      "Toán học",
+      "CNTT",
+      "Văn học",
+      "Khoa học",
+      "Triết học",
+      "Lịch sử",
+      "Địa lý",
+      "Kinh tế",
+      "Nghệ thuật",
+      "Y học",
+      "Ngoại ngữ",
+      "Kỹ năng mềm",
+      "Tâm lý học",
+      "Tôn giáo",
+      "Chính trị",
+      "Pháp luật",
+      "Thể thao",
+      "Nấu ăn",
+      "Du lịch",
     ];
-    const categoryDocs = await Category.insertMany(categoryNames.map(name => ({
-      name, description: `Tài liệu thuộc lĩnh vực ${name}`
-    })));
+    const categoryDocs = await Category.insertMany(
+      categoryNames.map((name) => ({
+        name,
+        description: `Tài liệu thuộc lĩnh vực ${name}`,
+      })),
+    );
     logger.info("20 categories seeded");
 
     // 4. Seed 5000 Books & 15,000 Copies
@@ -116,9 +170,13 @@ const clearAndSeedData = async () => {
 
       for (let j = 0; j < currentBatchSize; j++) {
         const id = i + j;
-        const title = bookTitles[id % bookTitles.length] + ` (Vol ${Math.floor(id / bookTitles.length) + 1})`;
-        const isbn = `978-${Math.floor(Math.random() * 1000000000).toString().padStart(9, "0")}`;
-        
+        const title =
+          bookTitles[id % bookTitles.length] +
+          ` (Vol ${Math.floor(id / bookTitles.length) + 1})`;
+        const isbn = `978-${Math.floor(Math.random() * 1000000000)
+          .toString()
+          .padStart(9, "0")}`;
+
         bookBatch.push({
           title,
           author: authors[id % authors.length],
@@ -126,12 +184,13 @@ const clearAndSeedData = async () => {
           category: categoryDocs[id % categoryDocs.length]._id,
           description: `Detailed description for "${title}". Essential reading for students.`,
           coverImage: bookImages[id % bookImages.length],
-          documentUrl: id < 1000 ? samplePdfs[id % samplePdfs.length] : undefined,
+          documentUrl:
+            id < 1000 ? samplePdfs[id % samplePdfs.length] : undefined,
           documentPublicId: id < 1000 ? `seed-pdf-${id}` : undefined,
           publishedYear: 2005 + Math.floor(Math.random() * 20),
         });
       }
-      
+
       const insertedBooks = await Book.insertMany(bookBatch);
       allBooks.push(...insertedBooks);
 
@@ -153,135 +212,171 @@ const clearAndSeedData = async () => {
     logger.info("5000 books and 15,000 copies created");
 
     // 5. Seed 2500 Loans (50% Ebook, 50% Physical)
-    const ebookBookIds = allBooks.filter(b => b.documentUrl).map(b => b._id);
-    const physicalBookIds = allBooks.filter(b => !b.documentUrl).map(b => b._id);
+    const ebookBookIds = allBooks
+      .filter((b) => b.documentUrl)
+      .map((b) => b._id);
+    const physicalBookIds = allBooks
+      .filter((b) => !b.documentUrl)
+      .map((b) => b._id);
 
-    const ebookCopies = await Copy.find({ bookId: { $in: ebookBookIds } }).limit(2000);
-    const physicalCopies = await Copy.find({ bookId: { $in: physicalBookIds } }).limit(2000);
+    const ebookCopies = await Copy.find({
+      bookId: { $in: ebookBookIds },
+    }).limit(2000);
+    const physicalCopies = await Copy.find({
+      bookId: { $in: physicalBookIds },
+    }).limit(2000);
 
     const loanData = [];
     const now = new Date();
 
     // Generate 1250 loans for each type
     const types = [
-        { copies: ebookCopies, count: 1250 },
-        { copies: physicalCopies, count: 1250 }
+      { copies: ebookCopies, count: 1250 },
+      { copies: physicalCopies, count: 1250 },
     ];
 
     let totalLoanIdx = 0;
     for (const typeGroup of types) {
-        for (let i = 0; i < typeGroup.count; i++) {
-            const user = users[totalLoanIdx % users.length];
-            const copy = typeGroup.copies[i % typeGroup.copies.length];
-            const status = totalLoanIdx < 200 ? "pending" : totalLoanIdx < 800 ? "active" : totalLoanIdx < 1200 ? "overdue" : "returned";
+      for (let i = 0; i < typeGroup.count; i++) {
+        const user = users[totalLoanIdx % users.length];
+        const copy = typeGroup.copies[i % typeGroup.copies.length];
+        const status =
+          totalLoanIdx < 200
+            ? "pending"
+            : totalLoanIdx < 800
+              ? "active"
+              : totalLoanIdx < 1200
+                ? "overdue"
+                : "returned";
 
-            const borrowDate = new Date();
-            borrowDate.setMonth(now.getMonth() - Math.floor(Math.random() * 6));
-            borrowDate.setDate(Math.floor(Math.random() * 28) + 1);
+        const borrowDate = new Date();
+        borrowDate.setMonth(now.getMonth() - Math.floor(Math.random() * 6));
+        borrowDate.setDate(Math.floor(Math.random() * 28) + 1);
 
-            const dueDate = new Date(borrowDate.getTime() + 14 * 24 * 60 * 60 * 1000);
-            let returnDate = status === "returned" ? new Date(dueDate.getTime() + (Math.random() > 0.5 ? -2 : 5) * 24 * 60 * 60 * 1000) : undefined;
+        const dueDate = new Date(
+          borrowDate.getTime() + 14 * 24 * 60 * 60 * 1000,
+        );
+        let returnDate =
+          status === "returned"
+            ? new Date(
+                dueDate.getTime() +
+                  (Math.random() > 0.5 ? -2 : 5) * 24 * 60 * 60 * 1000,
+              )
+            : undefined;
 
-            loanData.push({
-                userId: user._id,
-                copyId: copy._id,
-                borrowDate,
-                dueDate,
-                returnDate,
-                status,
-                createdAt: borrowDate,
-            });
-            totalLoanIdx++;
-        }
+        loanData.push({
+          userId: user._id,
+          copyId: copy._id,
+          borrowDate,
+          dueDate,
+          returnDate,
+          status,
+          createdAt: borrowDate,
+        });
+        totalLoanIdx++;
+      }
     }
     const seededLoans = await Loan.insertMany(loanData);
-    
+
     // Sync copy statuses for non-returned loans
-    const loansToUpdate = seededLoans.filter(l => l.status !== 'returned');
+    const loansToUpdate = seededLoans.filter((l) => l.status !== "returned");
     for (const loan of loansToUpdate) {
-        await Copy.findByIdAndUpdate(loan.copyId, { 
-            status: loan.status === 'pending' ? 'reserved' : 'borrowed' 
-        });
+      await Copy.findByIdAndUpdate(loan.copyId, {
+        status: loan.status === "pending" ? "reserved" : "borrowed",
+      });
     }
     logger.info("2500 loans seeded and copy statuses synced");
 
     // 6. Seed 200 Fines
-    const overdueLoans = seededLoans.filter(l => l.status === 'overdue' || (l.status === 'returned' && l.returnDate! > l.dueDate)).slice(0, 200);
+    const overdueLoans = seededLoans
+      .filter(
+        (l) =>
+          l.status === "overdue" ||
+          (l.status === "returned" && l.returnDate! > l.dueDate),
+      )
+      .slice(0, 200);
     const fineData = overdueLoans.map((loan, idx) => {
-        const daysLate = Math.ceil(( (loan.returnDate || now).getTime() - loan.dueDate.getTime()) / (1000 * 3600 * 24));
-        const overdueDays = Math.max(daysLate, 1);
-        return {
-            userId: loan.userId,
-            loanId: loan._id,
-            amount: overdueDays * 5000,
-            reason: "Trả sách muộn",
-            overdueDays,
-            status: idx < 50 ? "paid" : "pending",
-            createdAt: loan.dueDate
-        };
+      const daysLate = Math.ceil(
+        ((loan.returnDate || now).getTime() - loan.dueDate.getTime()) /
+          (1000 * 3600 * 24),
+      );
+      const overdueDays = Math.max(daysLate, 1);
+      return {
+        userId: loan.userId,
+        loanId: loan._id,
+        amount: overdueDays * 5000,
+        reason: "Trả sách muộn",
+        overdueDays,
+        status: idx < 50 ? "paid" : "pending",
+        createdAt: loan.dueDate,
+      };
     });
     await Fine.insertMany(fineData);
     logger.info("200 fines seeded");
 
     // 7. Seed Notifications
     const notificationData = [];
-    
+
     // Notifications for Loans
     for (const loan of seededLoans) {
-        const book = allBooks.find(b => b._id.toString() === (loan.copyId as any).bookId?.toString() || b.isbn === (loan as any).copyId?.barcode?.split('-')[1]);
-        // Note: loan data in seeder doesn't have populated copy, so we use a simplified approach
-        const title = "tài liệu"; // Fallback title
-        
-        switch (loan.status) {
-            case 'pending':
-                notificationData.push({
-                    userId: loan.userId,
-                    message: `Yêu cầu mượn sách của bạn đang được xử lý.`,
-                    type: 'INFO',
-                    createdAt: loan.createdAt
-                });
-                break;
-            case 'active':
-                notificationData.push({
-                    userId: loan.userId,
-                    message: `Bạn đã mượn sách thành công. Hạn trả là ${loan.dueDate.toLocaleDateString('vi-VN')}.`,
-                    type: 'SUCCESS',
-                    createdAt: loan.createdAt
-                });
-                break;
-            case 'overdue':
-                notificationData.push({
-                    userId: loan.userId,
-                    message: `Sách mượn của bạn đã quá hạn. Vui lòng trả sớm để tránh phát sinh phí.`,
-                    type: 'WARNING',
-                    createdAt: loan.dueDate
-                });
-                break;
-            case 'returned':
-                notificationData.push({
-                    userId: loan.userId,
-                    message: `Bạn đã trả sách thành công. Cảm ơn bạn!`,
-                    type: 'SUCCESS',
-                    createdAt: loan.returnDate
-                });
-                break;
-        }
+      const book = allBooks.find(
+        (b) =>
+          b._id.toString() === (loan.copyId as any).bookId?.toString() ||
+          b.isbn === (loan as any).copyId?.barcode?.split("-")[1],
+      );
+      // Note: loan data in seeder doesn't have populated copy, so we use a simplified approach
+      const title = "tài liệu"; // Fallback title
+
+      switch (loan.status) {
+        case "pending":
+          notificationData.push({
+            userId: loan.userId,
+            message: `Yêu cầu mượn sách của bạn đang được xử lý.`,
+            type: "INFO",
+            createdAt: loan.createdAt,
+          });
+          break;
+        case "active":
+          notificationData.push({
+            userId: loan.userId,
+            message: `Bạn đã mượn sách thành công. Hạn trả là ${loan.dueDate.toLocaleDateString("vi-VN")}.`,
+            type: "SUCCESS",
+            createdAt: loan.createdAt,
+          });
+          break;
+        case "overdue":
+          notificationData.push({
+            userId: loan.userId,
+            message: `Sách mượn của bạn đã quá hạn. Vui lòng trả sớm để tránh phát sinh phí.`,
+            type: "WARNING",
+            createdAt: loan.dueDate,
+          });
+          break;
+        case "returned":
+          notificationData.push({
+            userId: loan.userId,
+            message: `Bạn đã trả sách thành công. Cảm ơn bạn!`,
+            type: "SUCCESS",
+            createdAt: loan.returnDate,
+          });
+          break;
+      }
     }
 
     // Notifications for Fines
     for (const fine of fineData) {
-        notificationData.push({
-            userId: fine.userId,
-            message: `Bạn có một khoản phí phạt mới: ${fine.amount.toLocaleString()}đ cho việc trả sách muộn.`,
-            type: 'DANGER',
-            createdAt: fine.createdAt
-        });
+      notificationData.push({
+        userId: fine.userId,
+        message: `Bạn có một khoản phí phạt mới: ${fine.amount.toLocaleString()}đ cho việc trả sách muộn.`,
+        type: "DANGER",
+        createdAt: fine.createdAt,
+      });
     }
 
     // Seed in batches to avoid overwhelming MongoDB
     const NOTIF_BATCH = 1000;
     for (let i = 0; i < notificationData.length; i += NOTIF_BATCH) {
-        await Notification.insertMany(notificationData.slice(i, i + NOTIF_BATCH));
+      await Notification.insertMany(notificationData.slice(i, i + NOTIF_BATCH));
     }
     logger.info(`${notificationData.length} notifications seeded`);
 

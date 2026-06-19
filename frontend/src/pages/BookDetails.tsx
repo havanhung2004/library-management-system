@@ -7,7 +7,6 @@ import {
   Calendar,
   Hash,
   FileText,
-  Download,
   CheckCircle,
   AlertCircle,
   ArrowLeft,
@@ -19,9 +18,15 @@ const BookDetails: React.FC = () => {
   const { bookId } = useParams<{ bookId: string }>();
   const [book, setBook] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [borrowing, setBorrowing] = useState(false);
-  const [message, setMessage] = useState("");
-  const [userLoan, setUserLoan] = useState<any>(null);
+
+  // ── [SỬA] Tách state cho eBook và sách vật lý ──────────────
+  const [ebookLoan, setEbookLoan] = useState<any>(null);
+  const [physicalLoan, setPhysicalLoan] = useState<any>(null);
+  const [borrowingEbook, setBorrowingEbook] = useState(false);
+  const [borrowingPhysical, setBorrowingPhysical] = useState(false);
+  const [ebookMessage, setEbookMessage] = useState("");
+  const [physicalMessage, setPhysicalMessage] = useState("");
+  // ────────────────────────────────────────────────────────────
 
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -39,47 +44,98 @@ const BookDetails: React.FC = () => {
       }
     };
 
+    // ── [SỬA] fetchUserLoan tách riêng ebookLoan và physicalLoan ──
     const fetchUserLoan = async () => {
       if (!user) return;
       try {
         const response = await api.get("/loans/my-loans");
-        const activeOrPending = response.data.data.find(
+        const loans = response.data.data;
+
+        // eBook loan: loanType === "ebook" và bookId khớp trực tiếp
+        const ebook = loans.find(
           (l: any) =>
+            l.loanType === "ebook" &&
+            l.bookId?._id?.toString() === bookId &&
+            ["active", "pending", "overdue"].includes(l.status),
+        );
+
+        // Physical loan: loanType !== "ebook", tìm qua copyId
+        const physical = loans.find(
+          (l: any) =>
+            l.loanType !== "ebook" &&
             l.copyId?.bookId?._id === bookId &&
             ["active", "pending", "overdue"].includes(l.status),
         );
-        setUserLoan(activeOrPending);
+
+        setEbookLoan(ebook);
+        setPhysicalLoan(physical);
       } catch (err) {
         console.error("Error fetching user loans:", err);
       }
     };
+    // ─────────────────────────────────────────────────────────────
 
     fetchBook();
     fetchUserLoan();
   }, [bookId, user]);
 
-  const handleBorrow = async () => {
+  // ── [SỬA] Handler riêng cho eBook ──────────────────────────
+  const handleBorrowEbook = async () => {
     if (!user) {
       navigate("/login", { state: { from: location } });
       return;
     }
-    setBorrowing(true);
-    setMessage("");
+    setBorrowingEbook(true);
+    setEbookMessage("");
     try {
-      const response = await api.post("/loans/borrow", {
-        bookId: bookId,
-        durationDays: 14, // Default duration
+      await api.post("/loans/borrow", {
+        bookId,
+        loanType: "ebook",
+        durationDays: 14,
       });
-      setMessage("Yêu cầu mượn đã được gửi, vui lòng chờ Admin phê duyệt.");
-      setUserLoan({ status: "pending", copyId: { bookId: { _id: bookId } } });
+      setEbookMessage(
+        "Yêu cầu đọc eBook đã được gửi, vui lòng chờ Admin phê duyệt.",
+      );
+      setEbookLoan({ status: "pending", loanType: "ebook", bookId });
     } catch (err: any) {
-      setMessage(
+      setEbookMessage(
+        err.response?.data?.message || "Có lỗi xảy ra khi gửi yêu cầu.",
+      );
+    } finally {
+      setBorrowingEbook(false);
+    }
+  };
+
+  // ── [SỬA] Handler riêng cho sách vật lý ────────────────────
+  const handleBorrowPhysical = async () => {
+    if (!user) {
+      navigate("/login", { state: { from: location } });
+      return;
+    }
+    setBorrowingPhysical(true);
+    setPhysicalMessage("");
+    try {
+      await api.post("/loans/borrow", {
+        bookId,
+        loanType: "physical",
+        durationDays: 14,
+      });
+      setPhysicalMessage(
+        "Yêu cầu mượn đã được gửi, vui lòng chờ Admin phê duyệt.",
+      );
+      setPhysicalLoan({
+        status: "pending",
+        copyId: { bookId: { _id: bookId } },
+      });
+    } catch (err: any) {
+      setPhysicalMessage(
         err.response?.data?.message || "Có lỗi xảy ra khi thực hiện mượn sách.",
       );
     } finally {
-      setBorrowing(false);
+      setBorrowingPhysical(false);
     }
   };
+  // ────────────────────────────────────────────────────────────
 
   if (loading) {
     return (
@@ -130,9 +186,14 @@ const BookDetails: React.FC = () => {
           <div className="premium-card space-y-4">
             <div className="flex justify-between items-center text-sm border-b border-on-surface/5 pb-3">
               <span className="text-on-surface/50 flex items-center gap-2">
-                <CheckCircle className={`w-4 h-4 ${book.availableCopies > 0 ? 'text-green-500' : 'text-on-surface/20'}`} /> Sẵn có
+                <CheckCircle
+                  className={`w-4 h-4 ${book.availableCopies > 0 ? "text-green-500" : "text-on-surface/20"}`}
+                />{" "}
+                Sẵn có
               </span>
-              <span className={`font-bold ${book.availableCopies === 0 ? 'text-accent' : ''}`}>
+              <span
+                className={`font-bold ${book.availableCopies === 0 ? "text-accent" : ""}`}
+              >
                 {book.availableCopies ?? 0} bản
               </span>
             </div>
@@ -195,71 +256,109 @@ const BookDetails: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* ── [SỬA] Card eBook — dùng ebookLoan, gọi handleBorrowEbook ── */}
               {book.documentUrl && (
-                <div className="premium-card bg-surface/40 group hover:border-primary/50 transition-all">
+                <div className="premium-card bg-surface/40 group hover:border-primary/50 transition-all flex flex-col">
                   <FileText className="w-8 h-8 text-primary mb-4" />
                   <h4 className="font-bold text-lg mb-2">Tài liệu số (PDF)</h4>
                   <p className="text-on-surface/50 text-sm mb-6">
-                    {userLoan?.status === "active" || userLoan?.status === "overdue"
+                    {ebookLoan?.status === "active" ||
+                    ebookLoan?.status === "overdue"
                       ? "Bạn có thể đọc tài liệu số trực tuyến với tính năng bảo mật cao."
                       : "Trình xem trực tuyến sẽ khả dụng sau khi yêu cầu mượn được phê duyệt."}
                   </p>
-                  {userLoan?.status === "active" || userLoan?.status === "overdue" ? (
+                  <div className="mt-auto">
                     <button
-                      onClick={() => navigate(`/reader/${bookId}`)}
-                      className="premium-button w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/80 transition-all shadow-lg shadow-primary/20"
+                      onClick={() => navigate(`/reader/${bookId}?full=true`)}
+                      className="premium-button w-full flex items-center justify-center gap-2 mb-3 bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30"
                     >
-                      <BookOpen className="w-4 h-4" /> Đọc trực tuyến
+                      <BookOpen className="w-4 h-4" />
+                      Xem trước
                     </button>
-                  ) : (
-                    <button
-                      disabled
-                      className="premium-button w-full flex items-center justify-center gap-2 bg-on-surface/10 text-on-surface/40 border-on-surface/5 cursor-not-allowed"
+                    {ebookLoan?.status === "active" ||
+                    ebookLoan?.status === "overdue" ? (
+                      <button
+                        onClick={() => navigate(`/reader/${bookId}?full=true`)}
+                        className="premium-button w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/80"
+                      >
+                        <BookOpen className="w-4 h-4" />
+                        Đọc toàn bộ tài liệu
+                      </button>
+                    ) : ebookLoan?.status === "pending" ? (
+                      <button
+                        disabled
+                        className="premium-button w-full flex items-center justify-center gap-2 bg-on-surface/10 text-on-surface/40 border-on-surface/5 cursor-not-allowed"
+                      >
+                        <BookOpen className="w-4 h-4" /> YÊU CẦU ĐANG CHỜ DUYỆT
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleBorrowEbook}
+                        disabled={borrowingEbook}
+                        className="premium-button w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/80"
+                      >
+                        <BookOpen className="w-4 h-4" />
+                        {borrowingEbook
+                          ? "Đang xử lý..."
+                          : "Đăng ký đọc tài liệu số"}
+                      </button>
+                    )}
+                  </div>
+                  {ebookMessage && (
+                    <motion.p
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="mt-3 text-sm text-green-400"
                     >
-                      <BookOpen className="w-4 h-4" /> Đọc trực tuyến (Cần mượn)
-                    </button>
+                      {ebookMessage}
+                    </motion.p>
                   )}
                 </div>
               )}
 
-              <div className="premium-card bg-surface/40 group hover:border-secondary/50 transition-all">
+              {/* ── [SỬA] Card sách vật lý — dùng physicalLoan, gọi handleBorrowPhysical ── */}
+              <div className="premium-card bg-surface/40 group hover:border-secondary/50 transition-all flex flex-col">
                 <BookOpen className="w-8 h-8 text-secondary mb-4" />
                 <h4 className="font-bold text-lg mb-2">Sách vật lý</h4>
                 <p className="text-on-surface/50 text-sm mb-6">
                   Mượn sách trực tiếp tại quầy thư viện khu A1.
                 </p>
-                <button
-                  onClick={handleBorrow}
-                  disabled={borrowing || !!userLoan || book.availableCopies === 0}
-                  className={`premium-button w-full flex items-center justify-center gap-2 shadow-secondary/20 ${
-                    userLoan || book.availableCopies === 0
-                      ? "bg-on-surface/10 text-on-surface/50 border-on-surface/5 cursor-not-allowed"
-                      : "bg-secondary hover:bg-secondary/80 text-white"
-                  }`}
-                >
-                  {borrowing
-                    ? "Đang xử lý..."
-                    : userLoan
-                      ? userLoan.status === "pending"
+                <div className="mt-auto">
+                  <button
+                    onClick={handleBorrowPhysical}
+                    disabled={
+                      borrowingPhysical ||
+                      !!physicalLoan ||
+                      book.availableCopies === 0
+                    }
+                    className={`premium-button w-full flex items-center justify-center gap-3 shadow-secondary/20 ${
+                      physicalLoan || book.availableCopies === 0
+                        ? "bg-on-surface/10 text-on-surface/50 border-on-surface/5 cursor-not-allowed"
+                        : "bg-secondary hover:bg-secondary/80 text-white"
+                    }`}
+                  >
+                    {borrowingPhysical
+                      ? "Đang xử lý..."
+                      : physicalLoan?.status === "pending"
                         ? "YÊU CẦU ĐANG CHỜ DUYỆT"
-                        : "BẠN ĐANG MƯỢN SÁCH NÀY"
-                      : book.availableCopies === 0
-                        ? "HẾT SÁCH SẴN CÓ"
-                        : "Mượn sách"}
-                </button>
+                        : physicalLoan
+                          ? "BẠN ĐANG MƯỢN SÁCH NÀY"
+                          : book.availableCopies === 0
+                            ? "HẾT SÁCH SẴN CÓ"
+                            : "Mượn sách"}
+                  </button>
+                </div>
+                {physicalMessage && (
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="mt-3 text-sm text-green-400"
+                  >
+                    {physicalMessage}
+                  </motion.p>
+                )}
               </div>
             </div>
-
-            {message && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="p-6 bg-green-500/10 border border-green-500/20 rounded-2xl text-green-500 flex items-center gap-4"
-              >
-                <CheckCircle className="w-6 h-6 flex-shrink-0" />
-                <span className="font-medium text-lg">{message}</span>
-              </motion.div>
-            )}
           </div>
         </motion.div>
       </div>
@@ -268,4 +367,3 @@ const BookDetails: React.FC = () => {
 };
 
 export default BookDetails;
-

@@ -11,6 +11,8 @@ export interface IBook {
   publishedYear?: number;
   documentUrl?: string;
   documentPublicId?: string;
+  previewUrl?: string;
+  previewPublicId?: string;
   coverPublicId?: string;
 }
 
@@ -43,4 +45,3 @@ export interface IDocument {
 }
 
 export interface IDocumentDoc extends IDocument, Document {}
-

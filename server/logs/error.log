@@ -1,2 +1,4 @@
 2026-04-09 15:32:29:3229 [31merror[39m: [31mCould not connect to MongoDB E11000 duplicate key error collection: hnue-digital-library.categories index: name_1 dup key: { name: "Giáo dục" }[39m
 2026-04-18 13:55:56:5556 [31merror[39m: [31mError during high-volume seeding: Fine validation failed: overdueDays: Path `overdueDays` is required.[39m
+2026-05-18 15:36:54:3654 [31merror[39m: [31mCould not connect to MongoDB E11000 duplicate key error collection: hnue-digital-library.copies index: barcode_1 dup key: { barcode: "BC-9990001113-01" }[39m
+2026-06-18 16:19:33:1933 [31merror[39m: [31mCould not connect to MongoDB E11000 duplicate key error collection: hnue-digital-library.copies index: barcode_1 dup key: { barcode: "BC-9990001113-01" }[39m

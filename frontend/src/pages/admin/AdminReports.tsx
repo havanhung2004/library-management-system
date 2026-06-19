@@ -20,11 +20,10 @@ import {
   BarChart3,
 } from "lucide-react";
 import api from "../../lib/api";
-
+import * as XLSX from "xlsx";
 const AdminReports: React.FC = () => {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     fetchStats();
   }, []);
@@ -40,21 +39,51 @@ const AdminReports: React.FC = () => {
     }
   };
 
-  const exportCSV = () => {
-    const headers = ["Tháng", "Lượt mượn"];
-    const rows = data?.loansOverTime?.map((d: any) => [d.name, d.loans]) || [];
-    const csvContent =
-      "data:text/csv;charset=utf-8," +
-      headers.join(",") +
-      "\n" +
-      rows.map((e: any) => e.join(",")).join("\n");
+  const exportExcel = () => {
+    const workbook = XLSX.utils.book_new();
 
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "bao_cao_thu_vien.csv");
-    document.body.appendChild(link);
-    link.click();
+    // Sheet 1 - Xu hướng mượn
+    const loansSheet = XLSX.utils.aoa_to_sheet([
+      ["BÁO CÁO XU HƯỚNG MƯỢN SÁCH"],
+      [],
+      ["Tháng", "Lượt mượn"],
+      ...data.loansOverTime.map((item: any) => [item.name, item.loans]),
+    ]);
+
+    XLSX.utils.book_append_sheet(workbook, loansSheet, "Xu hướng mượn");
+
+    // Sheet 2 - Top sách
+    const topBooksData =
+      data?.topBooks?.map((item: any) => ({
+        "Tên sách": item.name,
+        "Lượt mượn": item.count,
+      })) || [];
+
+    const topBooksSheet = XLSX.utils.json_to_sheet(topBooksData);
+
+    XLSX.utils.book_append_sheet(workbook, topBooksSheet, "Top sách");
+
+    // Sheet 3 - Phí phạt
+    const fineData = [
+      {
+        "Loại phí": "Đã thanh toán",
+        "Số tiền": data?.fineStats?.paid || 0,
+      },
+      {
+        "Loại phí": "Chưa thanh toán",
+        "Số tiền": data?.fineStats?.pending || 0,
+      },
+    ];
+
+    const fineSheet = XLSX.utils.json_to_sheet(fineData);
+
+    XLSX.utils.book_append_sheet(workbook, fineSheet, "Phí phạt");
+
+    // Xuất file
+    XLSX.writeFile(
+      workbook,
+      `BaoCaoThuVien_${new Date().toISOString().split("T")[0]}.xlsx`,
+    );
   };
 
   if (loading) {
@@ -79,12 +108,12 @@ const AdminReports: React.FC = () => {
           </p>
         </div>
         <button
-          onClick={exportCSV}
+          onClick={exportExcel}
           className="premium-button flex items-center gap-2 group shadow-lg shadow-primary/10"
         >
           <DownloadCloud className="w-4 h-4 group-hover:animate-bounce" />
           <span className="text-xs font-black uppercase tracking-widest">
-            Xuất Báo cáo CSV
+            Xuất Báo cáo
           </span>
         </button>
       </div>
@@ -318,4 +347,3 @@ const AdminReports: React.FC = () => {
 };
 
 export default AdminReports;
-

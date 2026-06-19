@@ -19,7 +19,7 @@ const menuItems = [
   { path: "/admin", label: "Tổng quan", icon: LayoutDashboard },
   { path: "/admin/books", label: "Quản lý Sách", icon: BookPlus },
   { path: "/admin/categories", label: "Quản lý danh mục", icon: Tag },
-  { path: "/admin/documents", label: "Quản lý tài liệu", icon: FileText },
+  { path: "/admin/documents", label: "Lưu trữ đám mây", icon: FileText },
   { path: "/admin/loans", label: "Quản lý mượn/trả", icon: ClipboardList },
   { path: "/admin/fines", label: "Quản lý phí phạt", icon: DollarSign },
   { path: "/admin/users", label: "Người dùng", icon: Users },
@@ -93,4 +93,3 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 export default AdminLayout;
-

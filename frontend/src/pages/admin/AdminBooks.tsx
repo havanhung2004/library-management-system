@@ -14,7 +14,7 @@ import {
 import api from "../../lib/api";
 import AdminCopiesModal from "./AdminCopiesModal";
 import Pagination from "../../components/ui/Pagination";
-
+import Select from "react-select";
 const AdminBooks: React.FC = () => {
   const [books, setBooks] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
@@ -73,7 +73,12 @@ const AdminBooks: React.FC = () => {
             format: formatFilter || undefined,
           },
         }),
-        api.get("/categories"),
+        api.get("/categories", {
+          params: {
+            page: 1,
+            limit: 999,
+          },
+        }),
       ]);
       setBooks(booksRes.data.data);
       setMeta(booksRes.data.meta);
@@ -252,7 +257,10 @@ const AdminBooks: React.FC = () => {
               <tr className="bg-on-surface/[0.02] text-on-surface/50 text-[10px] font-black uppercase tracking-widest border-b border-on-surface/5">
                 <th className="px-6 py-4">Sách</th>
                 <th className="px-6 py-4">ISBN</th>
-                <th className="px-6 py-4">Danh mục</th>
+                <th className="px-6 py-4 min-w-[120px]">Danh mục</th>
+                <th className="px-6 py-4 text-center w-[100px] whitespace-nowrap">
+                  Bản sao
+                </th>
                 <th className="px-6 py-4">Định dạng</th>
                 <th className="px-6 py-4">Tài liệu số</th>
                 <th className="px-6 py-4 text-right">Thao tác</th>
@@ -268,8 +276,11 @@ const AdminBooks: React.FC = () => {
                     <td className="px-6 py-4">
                       <div className="h-6 w-24 bg-on-surface/5 rounded"></div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 min-w-[150px]">
                       <div className="h-6 w-20 bg-on-surface/5 rounded"></div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="h-6 w-12 bg-on-surface/5 rounded "></div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="h-6 w-16 bg-on-surface/5 rounded"></div>
@@ -284,7 +295,7 @@ const AdminBooks: React.FC = () => {
                 ))
               ) : books.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-20 text-center">
+                  <td colSpan={7} className="px-6 py-20 text-center">
                     <div className="flex flex-col items-center gap-2 opacity-20 text-on-surface">
                       <BookOpen className="w-12 h-12" />
                       <p className="italic">Không tìm thấy sách phù hợp.</p>
@@ -323,10 +334,23 @@ const AdminBooks: React.FC = () => {
                     <td className="px-6 py-4 font-mono text-[11px] text-on-surface/60 font-semibold">
                       {book.isbn}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 min-w-[180px]">
                       <span className="text-[11px] font-bold px-2 py-1 bg-on-surface/5 rounded text-on-surface/70 border border-on-surface/10 uppercase tracking-tight">
                         {book.category?.name || "Chưa phân loại"}
                       </span>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex flex-col">
+                        <span
+                          className={`font-bold ${
+                            book.availableCopies === 0
+                              ? "text-red-500"
+                              : "text-green-600"
+                          }`}
+                        >
+                          {book.availableCopies}/{book.totalCopies}
+                        </span>
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-wrap gap-1">
@@ -356,35 +380,37 @@ const AdminBooks: React.FC = () => {
                         </span>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-right space-x-1">
-                      <button
-                        onClick={() => handleOpenCopies(book)}
-                        className="p-2 hover:bg-secondary/10 rounded-lg transition-colors text-on-surface/40 hover:text-secondary"
-                        title="Quản lý bản sao (Copies)"
-                      >
-                        <Boxes className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleOpenUpload(book._id)}
-                        className="p-2 hover:bg-primary/10 rounded-lg transition-colors text-on-surface/40 hover:text-primary"
-                        title="Tải lên tài liệu"
-                      >
-                        <Upload className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleOpenModal(book)}
-                        className="p-2 hover:bg-on-surface/10 rounded-lg transition-colors text-on-surface/40 hover:text-on-background"
-                        title="Sửa"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(book._id)}
-                        className="p-2 hover:bg-accent/10 rounded-lg transition-colors text-on-surface/40 hover:text-accent"
-                        title="Xóa"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                    <td className="px-6 py-4">
+                      <div className="grid grid-cols-2 gap-1 justify-items-center w-fit ml-auto">
+                        <button
+                          onClick={() => handleOpenCopies(book)}
+                          className="p-2 hover:bg-secondary/10 rounded-lg transition-colors text-on-surface/40 hover:text-secondary"
+                          title="Quản lý bản sao (Copies)"
+                        >
+                          <Boxes className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleOpenUpload(book._id)}
+                          className="p-2 hover:bg-primary/10 rounded-lg transition-colors text-on-surface/40 hover:text-primary"
+                          title="Tải lên tài liệu"
+                        >
+                          <Upload className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleOpenModal(book)}
+                          className="p-2 hover:bg-on-surface/10 rounded-lg transition-colors text-on-surface/40 hover:text-on-background"
+                          title="Sửa"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(book._id)}
+                          className="p-2 hover:bg-accent/10 rounded-lg transition-colors text-on-surface/40 hover:text-accent"
+                          title="Xóa"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -518,23 +544,26 @@ const AdminBooks: React.FC = () => {
                       <label className="text-[10px] font-black text-on-surface/40 uppercase tracking-widest mb-2 block">
                         Danh mục chuyên ngành
                       </label>
-                      <select
-                        required
-                        value={formData.category}
-                        onChange={(e) =>
-                          setFormData({ ...formData, category: e.target.value })
+                      <Select
+                        options={categories.map((cat) => ({
+                          value: cat._id,
+                          label: cat.name,
+                        }))}
+                        value={categories
+                          .map((cat) => ({
+                            value: cat._id,
+                            label: cat.name,
+                          }))
+                          .find((c) => c.value === formData.category)}
+                        onChange={(option) =>
+                          setFormData({
+                            ...formData,
+                            category: option?.value || "",
+                          })
                         }
-                        className="w-full bg-background border border-on-surface/10 rounded-lg py-2.5 px-4 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all text-on-surface font-medium appearance-none cursor-pointer"
-                      >
-                        <option value="" disabled>
-                          Chọn danh mục...
-                        </option>
-                        {categories.map((cat) => (
-                          <option key={cat._id} value={cat._id}>
-                            {cat.name}
-                          </option>
-                        ))}
-                      </select>
+                        placeholder="Chọn danh mục..."
+                        maxMenuHeight={250}
+                      />
                     </div>
                     <div className="col-span-2">
                       <label className="text-[10px] font-black text-on-surface/40 uppercase tracking-widest mb-2 block">
@@ -656,6 +685,7 @@ const AdminBooks: React.FC = () => {
       <AdminCopiesModal
         isOpen={showCopiesModal}
         onClose={() => setShowCopiesModal(false)}
+        onRefresh={fetchData}
         book={selectedBookForCopies}
       />
     </div>
@@ -663,4 +693,3 @@ const AdminBooks: React.FC = () => {
 };
 
 export default AdminBooks;
-
