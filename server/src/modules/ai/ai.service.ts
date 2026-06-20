@@ -33,9 +33,6 @@ class AIService {
     this.model = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
   }
 
-  /**
-   * Search relevant books from DB based on user query (RAG retrieval step)
-   */
   private async retrieveRelevantBooks(query: string): Promise<string> {
     try {
       const stopWords = [
@@ -138,9 +135,6 @@ class AIService {
     }
   }
 
-  /**
-   * Chat with AI Assistant (with RAG context injection)
-   */
   async chat(
     prompt: string,
     history: any[] = [],
@@ -200,11 +194,11 @@ class AIService {
                 `${fine.userId?.profile?.firstName || ""} ${fine.userId?.profile?.lastName || ""}`.trim();
 
               return `
-- ${name}
-  • Số tiền: ${fine.amount} VNĐ
-  • Lý do: ${fine.reason}
-  • Quá hạn: ${fine.overdueDays} ngày
-`;
+              - ${name}
+                • Số tiền: ${fine.amount} VNĐ
+                • Lý do: ${fine.reason}
+                • Quá hạn: ${fine.overdueDays} ngày
+              `;
             })
             .join("\n");
           const totalPendingFineAmount = pendingFines.reduce(
@@ -321,29 +315,29 @@ ${
     : "Không có"
 }
 
-Sách quá hạn:
-${
-  overdueLoans.length > 0
-    ? overdueLoans
-        .map((loan: any) => `- ${loan.copyId?.bookId?.title}`)
-        .join("\n")
-    : "Không có"
-}
+        Sách quá hạn:
+        ${
+          overdueLoans.length > 0
+            ? overdueLoans
+                .map((loan: any) => `- ${loan.copyId?.bookId?.title}`)
+                .join("\n")
+            : "Không có"
+        }
 
-Hãy sử dụng dữ liệu này để hỗ trợ người dùng.
-`;
+        Hãy sử dụng dữ liệu này để hỗ trợ người dùng.
+        `;
         }
       }
       const augmentedPrompt = `
-${userContext}
+        ${userContext}
 
-CÂU HỎI NGƯỜI DÙNG:
-${prompt}
+        CÂU HỎI NGƯỜI DÙNG:
+        ${prompt}
 
-${bookContext}
+        ${bookContext}
 
-Hãy trả lời thân thiện, ngắn gọn và hữu ích.
-`;
+        Hãy trả lời thân thiện, ngắn gọn và hữu ích.
+        `;
       const systemHistory = [
         {
           role: "user",

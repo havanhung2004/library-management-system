@@ -128,7 +128,6 @@ const returnBook = async (loanId: string, user?: any) => {
       );
     }
 
-    // Check if the book is an ebook
     const book = (loan.copyId as any)?.bookId;
     if (loan.loanType !== "ebook") {
       throw new ApiError(
@@ -149,7 +148,7 @@ const returnBook = async (loanId: string, user?: any) => {
   if (returnDate > dueDate) {
     const diffTime = Math.abs(returnDate.getTime() - dueDate.getTime());
     const overdueDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    const amount = overdueDays * 5000; // 5k per day
+    const amount = overdueDays * 5000;
 
     await fineService.createFine({
       userId: loan.userId,
@@ -327,8 +326,6 @@ const approveLoan = async (loanId: string) => {
       await copy.save();
     }
   }
-
-  // Notify user
   await notificationService.createNotification(
     loan.userId.toString(),
     `Yêu cầu mượn sách của bạn đã được phê duyệt. Hạn trả là ${dueDate.toLocaleDateString("vi-VN")}.`,

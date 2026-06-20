@@ -160,13 +160,10 @@ const uploadCover = catchAsync(async (req: Request, res: Response) => {
     throw new Error("Please upload an image");
   }
 
-  // Check if book exists
   const book = await bookService.getBookById(req.params.bookId);
   if (!book) {
     throw new ApiError(404, "Book not found");
   }
-
-  // Delete old cover from Cloudinary if exists
   if (book.coverPublicId) {
     try {
       await deleteFromCloudinary(book.coverPublicId);
@@ -213,10 +210,6 @@ const getBookDocument = catchAsync(async (req: Request, res: Response) => {
   res.setHeader("X-Full-Access", fullAccess ? "true" : "false");
 
   res.setHeader("Content-Type", "application/pdf");
-
-  console.log("User:", userId);
-  console.log("Book:", bookId);
-  console.log("Full Access:", fullAccess);
 
   (response.data as Readable).pipe(res);
 });
